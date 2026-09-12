@@ -1,5 +1,16 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Conector e-SAJ</title>
-<style>body{font-family:Arial,sans-serif;width:340px;margin:0;padding:16px;background:#f5f7fb;color:#172033}h2{margin:0 0 6px;font-size:18px}p{font-size:12px;color:#667085;line-height:1.4}button{width:100%;box-sizing:border-box;margin-top:6px;margin-bottom:10px;padding:10px;border-radius:8px;font:inherit;border:0;cursor:pointer}.primary{background:#173b72;color:#fff}.msg{font-size:12px;padding:9px;border-radius:8px;margin-top:8px}.ok{background:#dcfae6;color:#067647}.err{background:#fee4e2;color:#b42318}.status{font-size:11px;color:#667085;margin:2px 0 10px}</style></head>
-<body><h2>SIG — Conector e-SAJ</h2><p>Usa a página do e-SAJ já autenticada neste navegador. Certificado, token e PIN permanecem no computador.</p><div class="status" id="who"></div><button id="enviar" class="primary">Enviar processo aberto ao SIG</button><div id="msg"></div><script src="popup2.js"></script></body></html>
+<style>body{font-family:Arial,sans-serif;width:360px;margin:0;padding:16px;background:#f5f7fb;color:#172033}h2{margin:0 0 6px;font-size:18px}p{font-size:12px;color:#667085;line-height:1.4}.divider{height:1px;background:#e5e7eb;margin:12px 0}.small{font-size:11px;color:#667085;line-height:1.4}button{width:100%;box-sizing:border-box;margin-top:6px;margin-bottom:10px;padding:10px;border-radius:8px;font:inherit;border:0;cursor:pointer}.primary{background:#173b72;color:#fff}.secondary{background:#eef3fb;color:#173b72}.msg{font-size:12px;padding:9px;border-radius:8px;margin-top:8px;white-space:pre-wrap}.ok{background:#dcfae6;color:#067647}.err{background:#fee4e2;color:#b42318}.status{font-size:11px;color:#667085;margin:2px 0 10px}</style></head>
+<body>
+<h2>SIG — Conector e-SAJ</h2>
+<p>Usa a sessão do e-SAJ já autenticada neste navegador. Certificado, token e PIN permanecem no computador.</p>
+<div class="status" id="who"></div>
+<button id="enviar" class="primary">Enviar processo aberto ao SIG</button>
+<div class="divider"></div>
+<b style="font-size:13px">Atualização em lote</b>
+<p class="small">Primeiro abra a página “Preparar lote” no SIG e copie a lista. Depois clique abaixo.</p>
+<button id="lote" class="secondary">Atualizar lote copiado</button>
+<div id="msg"></div>
+<script src="popup2.js"></script>
+</body></html>
