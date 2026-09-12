@@ -21,13 +21,8 @@
     );
 
     html=html.replace(
-      '</head>',
-      '<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"><\\/script></head>'
-    );
-
-    html=html.replace(
       '<button class="secondary" id="btnAtualizarTodos" onclick="atualizarTodos(this)">Atualizar todos</button>',
-      '<button type="button" class="secondary" id="btnAtualizarTodos" onclick="prepararLoteEsaj(this);return false;">Atualizar e-SAJ (lote)</button><button type="button" class="secondary" onclick="exportarProcessosExcel();return false;">Exportar Excel</button>'
+      '<button type="button" class="secondary" id="btnAtualizarTodos" onclick="prepararLoteEsaj(this);return false;">Atualizar e-SAJ (lote)</button>'
     );
 
     html=html.replace(
@@ -65,32 +60,6 @@ async function prepararLoteEsaj(btn){
     alert('Não foi possível preparar o lote e-SAJ: '+(e?.message||e));
   }finally{
     if(btn){btn.disabled=false;btn.textContent=textoOriginal;}
-  }
-}
-
-function exportarProcessosExcel(){
-  try{
-    const lista=(D?.processos||[]).map(p=>({
-      'Número CNJ': p.numero_cnj||'',
-      'Título': p.titulo||'',
-      'Área': p.area||'',
-      'Tribunal': p.tribunal||'',
-      'Comarca': p.comarca||'',
-      'Vara': p.vara||'',
-      'Parte contrária': p.parte_contraria||'',
-      'Status': p.status||'',
-      'Consulta': p.datajud_status||''
-    }));
-    if(!lista.length){alert('Não há processos para exportar.');return;}
-    if(typeof XLSX==='undefined'){alert('Módulo de Excel ainda não carregou. Atualize a página e tente novamente.');return;}
-    const ws=XLSX.utils.json_to_sheet(lista);
-    ws['!cols']=[{wch:26},{wch:42},{wch:18},{wch:12},{wch:22},{wch:18},{wch:30},{wch:14},{wch:24}];
-    const wb=XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb,ws,'Processos');
-    XLSX.writeFile(wb,'SIG_Advocacia_Colombo_Processos.xlsx');
-  }catch(e){
-    console.error(e);
-    alert('Não foi possível exportar o Excel: '+(e?.message||e));
   }
 }
 <\/script>`;
