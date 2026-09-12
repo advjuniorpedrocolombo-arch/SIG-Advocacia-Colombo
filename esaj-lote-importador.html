@@ -4,13 +4,14 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SIG — Importador em lote e-SAJ</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>body{margin:0;font-family:Arial,sans-serif;background:#f5f7fb;color:#172033}.wrap{max-width:980px;margin:36px auto;padding:20px}.card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:24px}.tag{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef3fb;color:#173b72;font-size:12px;font-weight:bold}.small{font-size:13px;color:#667085;line-height:1.5}.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}button{border:0;border-radius:8px;padding:11px 16px;cursor:pointer;font:inherit}.primary{background:#173b72;color:#fff}.secondary{background:#eef3fb;color:#173b72}.msg{margin-top:14px;padding:12px;border-radius:8px;white-space:pre-wrap}.ok{background:#dcfae6;color:#067647}.err{background:#fee4e2;color:#b42318}.table{margin-top:16px;overflow:auto;border:1px solid #e5e7eb;border-radius:10px}table{width:100%;border-collapse:collapse;min-width:760px}th,td{padding:9px 10px;border-bottom:1px solid #e5e7eb;text-align:left;font-size:12px}th{background:#f8fafc}.good{color:#067647;font-weight:bold}.bad{color:#b42318;font-weight:bold}</style>
 </head>
-<body><div class="wrap"><div class="card"><span class="tag">e-SAJ / TJSP</span><h2>Importar atualização em lote</h2><p class="small">A extensão concluiu a varredura no e-SAJ. Clique abaixo para gravar no SIG somente as movimentações que ainda não existem.</p><div id="sessao" class="small"></div><div class="row"><button id="importar" class="primary">Importar resultados do lote</button><button id="voltar" class="secondary">Voltar ao SIG</button></div><div id="msg"></div><div id="tabela" class="table" style="display:none"><table><thead><tr><th>Processo</th><th>Captura</th><th>Novas movimentações</th><th>Resultado</th></tr></thead><tbody id="tbody"></tbody></table></div></div></div>
+<body><div class="wrap"><div class="card"><span class="tag">e-SAJ / TJSP</span><h2>Importar atualização em lote</h2><p class="small">A extensão concluiu a varredura no e-SAJ. Clique abaixo para gravar no SIG somente as movimentações que ainda não existem.</p><div id="sessao" class="small"></div><div class="row"><button id="importar" class="primary">Importar resultados do lote</button><button id="excel" class="secondary" disabled>Exportar Excel</button><button id="voltar" class="secondary">Voltar ao SIG</button></div><div id="msg"></div><div id="tabela" class="table" style="display:none"><table><thead><tr><th>Processo</th><th>Captura</th><th>Novas movimentações</th><th>Resultado</th></tr></thead><tbody id="tbody"></tbody></table></div></div></div>
 <script>
 const SUPA_URL='https://dmvytzyfzeytfrddyucv.supabase.co';
 const SUPA_KEY='sb_publishable_ds9oZD_c1nMz9MwK-E4bTA_gzh4ubsb';
-const sb=supabase.createClient(SUPA_URL,SUPA_KEY),$=x=>document.getElementById(x);let user=null;
+const sb=supabase.createClient(SUPA_URL,SUPA_KEY),$=x=>document.getElementById(x);let user=null;let exportRows=[];
 function norm(v){return String(v||'').replace(/\D/g,'')}
 function fmt(n){n=norm(n);return n.replace(/^(\d{7})(\d{2})(\d{4})(\d)(\d{2})(\d{4})$/,'$1-$2.$3.$4.$5.$6')}
 function clean(s){return String(s||'').replace(/\s+/g,' ').trim()}
@@ -35,9 +36,20 @@ async function importarItem(item){
   const up=await sb.from('processos').update({datajud_status:'Atualizado via e-SAJ',tribunal:'TJSP',comarca:p.foro||null,vara:p.vara||null}).eq('id',proc.id);if(up.error)throw up.error;
   return {novas:unicas.length,status:'Atualizado',ok:true};
 }
+function exportarExcel(){
+  if(!exportRows.length)return alert('Ainda não há resultados para exportar. Faça a importação do lote primeiro.');
+  if(typeof XLSX==='undefined')return alert('O módulo de Excel não foi carregado. Atualize a página e tente novamente.');
+  const ws=XLSX.utils.json_to_sheet(exportRows);
+  ws['!cols']=[{wch:26},{wch:14},{wch:20},{wch:42}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Resultado e-SAJ');
+  const agora=new Date(),pad=n=>String(n).padStart(2,'0');
+  const nome=`SIG_ESAJ_${agora.getFullYear()}${pad(agora.getMonth()+1)}${pad(agora.getDate())}_${pad(agora.getHours())}${pad(agora.getMinutes())}.xlsx`;
+  XLSX.writeFile(wb,nome);
+}
 $('importar').onclick=async()=>{
   try{
-    $('importar').disabled=true;show('Lendo os resultados da extensão...',true);if(!(await sessao()))throw new Error('Faça login no SIG antes de importar.');
+    $('importar').disabled=true;$('excel').disabled=true;exportRows=[];show('Lendo os resultados da extensão...',true);if(!(await sessao()))throw new Error('Faça login no SIG antes de importar.');
     const raw=await navigator.clipboard.readText();if(!raw)throw new Error('Não há resultados copiados pela extensão.');
     let pacote;try{pacote=JSON.parse(raw)}catch(_){throw new Error('O conteúdo copiado não contém resultados válidos do conector e-SAJ.')}
     if(pacote?.tipo!=='SIG_ESAJ_RESULTADOS'||!Array.isArray(pacote.resultados))throw new Error('O conteúdo copiado não é um resultado de atualização em lote do SIG.');
@@ -46,11 +58,15 @@ $('importar').onclick=async()=>{
       const item=pacote.resultados[i];show(`Importando ${i+1}/${pacote.resultados.length}...`,true);let res;
       try{res=await importarItem(item)}catch(e){res={novas:0,status:e?.message||String(e),ok:false}}
       if(res.ok)ok++;else erros++;novas+=res.novas||0;
-      const tr=document.createElement('tr');tr.innerHTML=`<td>${fmt(item.numero_cnj||item.payload?.numero_cnj||'')}</td><td>${item.ok?'<span class="good">OK</span>':'<span class="bad">Falhou</span>'}</td><td>${res.novas||0}</td><td class="${res.ok?'good':'bad'}"></td>`;tr.lastElementChild.textContent=res.status;$('tbody').appendChild(tr);
+      const numero=fmt(item.numero_cnj||item.payload?.numero_cnj||'');
+      exportRows.push({'Processo':numero,'Captura':item.ok?'OK':'Falhou','Novas movimentações':res.novas||0,'Resultado':res.status});
+      const tr=document.createElement('tr');tr.innerHTML=`<td>${numero}</td><td>${item.ok?'<span class="good">OK</span>':'<span class="bad">Falhou</span>'}</td><td>${res.novas||0}</td><td class="${res.ok?'good':'bad'}"></td>`;tr.lastElementChild.textContent=res.status;$('tbody').appendChild(tr);
     }
+    $('excel').disabled=exportRows.length===0;
     show(`Atualização concluída.\nProcessos atualizados: ${ok}\nProcessos com falha: ${erros}\nNovas movimentações incluídas: ${novas}`,erros===0);
   }catch(e){show(e?.message||String(e));}
   finally{$('importar').disabled=false;}
 };
+$('excel').onclick=exportarExcel;
 $('voltar').onclick=()=>location.href='v2.html';sessao();
 </script></body></html>
