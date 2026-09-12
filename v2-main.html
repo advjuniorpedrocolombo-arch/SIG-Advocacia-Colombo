@@ -35,7 +35,7 @@
       "const encontrados=(raw.match(/\\d{7}-\\d{2}\\.\\d{4}\\.\\d\\.\\d{2}\\.\\d{4}/g)||[]).map(normalizaCNJ).filter(n=>n.length===20);"
     );
 
-    const loteScript = `
+    const extraScript = `
 <script>
 async function prepararLoteEsaj(btn){
   const textoOriginal=btn?.textContent||'Atualizar e-SAJ (lote)';
@@ -48,22 +48,63 @@ async function prepararLoteEsaj(btn){
       const n=normaliza(p.numero_cnj);
       return n.length===20 && (n.slice(13,16)==='826' || String(p.tribunal||'').toUpperCase()==='TJSP') && p.status!=='arquivado';
     });
-    if(!processos.length){
-      alert('Nenhum processo TJSP ativo foi encontrado no SIG.');
-      return;
-    }
+    if(!processos.length){alert('Nenhum processo TJSP ativo foi encontrado no SIG.');return;}
     const pacote={tipo:'SIG_ESAJ_LOTE',gerado_em:new Date().toISOString(),processos:processos.map(p=>({id:p.id,numero_cnj:p.numero_cnj,titulo:p.titulo}))};
     await navigator.clipboard.writeText(JSON.stringify(pacote));
     alert('Lote com '+processos.length+' processo(s) TJSP preparado e copiado. Agora abra a extensão SIG — Conector e-SAJ e clique em “Atualizar lote copiado”. O SIG permanecerá nesta tela.');
-  }catch(e){
-    console.error(e);
-    alert('Não foi possível preparar o lote e-SAJ: '+(e?.message||e));
-  }finally{
-    if(btn){btn.disabled=false;btn.textContent=textoOriginal;}
-  }
+  }catch(e){console.error(e);alert('Não foi possível preparar o lote e-SAJ: '+(e?.message||e));}
+  finally{if(btn){btn.disabled=false;btn.textContent=textoOriginal;}}
 }
+
+function clienteDoProcesso(p){
+  const vinculado=(D.clientes||[]).find(c=>c.id===p.cliente_id);
+  return vinculado?.nome || p.partes || '—';
+}
+function renderProcessosSIG(){
+  const tb=document.getElementById('tbProcessos');
+  if(!tb)return;
+  const busca=(document.getElementById('buscaProcesso')?.value||'').replace(/\\D/g,'');
+  const lista=(D.processos||[]).filter(p=>!busca || String(p.numero_cnj||'').replace(/\\D/g,'').includes(busca));
+  tb.innerHTML=lista.map(p=>`<tr>
+    <td>${esc(p.numero_cnj||'')}</td>
+    <td>${esc(clienteDoProcesso(p))}</td>
+    <td>${esc(p.area||'—')}</td>
+    <td>${esc(p.comarca||'—')}</td>
+    <td>${esc(p.vara||'—')}</td>
+    <td>${esc(p.tribunal||'—')}</td>
+    <td>${datajudLabel(p)}</td>
+    <td style="white-space:nowrap">${acaoProcesso(p)} <button type="button" class="secondary" style="color:#b42318" onclick="excluirProcessoSIG('${p.id}','${esc(p.numero_cnj||'')}')">Excluir</button></td>
+  </tr>`).join('');
+  const cont=document.getElementById('contagemProcessos');
+  if(cont)cont.textContent=lista.length+' de '+(D.processos||[]).length+' processo(s)';
+}
+async function excluirProcessoSIG(id,numero){
+  const aviso='ATENÇÃO — EXCLUSÃO DEFINITIVA\\n\\nProcesso: '+numero+'\\n\\nAo confirmar, o processo será excluído do SIG e os registros vinculados, como movimentações, prazos, tarefas e agenda, também poderão ser removidos. Esta ação não pode ser desfeita.\\n\\nDeseja realmente excluir?';
+  if(!confirm(aviso))return;
+  const {error}=await sb.from('processos').delete().eq('id',id);
+  if(error){alert('Não foi possível excluir o processo: '+error.message);return;}
+  await load();
+  alert('Processo excluído definitivamente do SIG.');
+}
+function prepararTelaProcessos(){
+  const sec=document.getElementById('processos');
+  if(!sec || document.getElementById('buscaProcesso'))return;
+  const toolbar=sec.querySelector('.toolbar');
+  const busca=document.createElement('div');
+  busca.style.cssText='display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0 14px';
+  busca.innerHTML='<input id="buscaProcesso" type="search" placeholder="Buscar número do processo" style="width:min(340px,100%);margin:0"><button type="button" class="secondary" id="limparBuscaProcesso">Limpar</button><span id="contagemProcessos" class="small"></span>';
+  toolbar.insertAdjacentElement('afterend',busca);
+  document.getElementById('buscaProcesso').addEventListener('input',renderProcessosSIG);
+  document.getElementById('limparBuscaProcesso').onclick=()=>{document.getElementById('buscaProcesso').value='';renderProcessosSIG();};
+  const th=sec.querySelector('thead tr');
+  if(th)th.innerHTML='<th>Número</th><th>Cliente</th><th>Área</th><th>Comarca</th><th>Vara</th><th>Tribunal</th><th>Consulta</th><th>Ação</th>';
+  const table=sec.querySelector('table');if(table)table.style.minWidth='1250px';
+}
+const renderOriginalSIG=render;
+render=function(){renderOriginalSIG();prepararTelaProcessos();renderProcessosSIG();};
+setTimeout(()=>{prepararTelaProcessos();renderProcessosSIG();},0);
 <\/script>`;
-    html=html.replace('</body>',loteScript+'\n</body>');
+    html=html.replace('</body>',extraScript+'\n</body>');
 
     document.open();
     document.write(html);
