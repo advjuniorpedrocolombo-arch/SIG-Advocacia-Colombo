@@ -59,6 +59,23 @@ function partes(){
   const area=document.querySelector('#partesPrincipais, #tablePartesPrincipais, [id*="partesPrincipais"], [id*="parte" i] table');
   return clean(area?.innerText||'');
 }
+function clienteRepresentado(){
+  const alvo=/510[.\s-]?497|OAB\s*\/?\s*SP\s*[:.-]?\s*510[.\s-]?497/i;
+  const area=document.querySelector('#partesPrincipais, #tablePartesPrincipais, [id*="partesPrincipais"], [id*="parte" i] table');
+  if(!area)return '';
+  const linhas=[...area.querySelectorAll('tr')];
+  for(const tr of linhas){
+    const texto=clean(tr.innerText||tr.textContent||'');
+    if(!alvo.test(texto))continue;
+    const cels=[...tr.querySelectorAll('td')].map(td=>clean(td.innerText||td.textContent||'')).filter(Boolean);
+    if(cels.length){
+      let nome=cels.find(v=>!alvo.test(v) && !/advogad|oab|autor|réu|requerente|requerido|exequente|executado|interessado/i.test(v))||cels[0];
+      nome=clean(nome.replace(/^(autor|réu|requerente|requerido|exequente|executado|interessado)\s*:?\s*/i,''));
+      if(nome)return nome;
+    }
+  }
+  return '';
+}
 chrome.runtime.onMessage.addListener((req,_sender,sendResponse)=>{
   if(req?.type!=='SIG_CAPTURAR_ESAJ')return;
   try{
@@ -70,6 +87,7 @@ chrome.runtime.onMessage.addListener((req,_sender,sendResponse)=>{
       vara:first(['#varaProcesso','#varaProcessoProcesso','[id*="varaProcesso"]']),
       juiz:first(['#juizProcesso','#juizProcessoProcesso','[id*="juizProcesso"]']),
       partes:partes(),
+      cliente_representado:clienteRepresentado(),
       movimentos:movimentos(),
       url:location.href,
       capturado_em:new Date().toISOString()
