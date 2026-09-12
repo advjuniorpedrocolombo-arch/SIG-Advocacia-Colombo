@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SIG — Atualização em lote e-SAJ</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>body{margin:0;font-family:Arial,sans-serif;background:#f5f7fb;color:#172033}.wrap{max-width:900px;margin:36px auto;padding:20px}.card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:24px}.tag{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef3fb;color:#173b72;font-size:12px;font-weight:bold}.small{font-size:13px;color:#667085;line-height:1.5}.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}button{border:0;border-radius:8px;padding:11px 16px;cursor:pointer;font:inherit}.primary{background:#173b72;color:#fff}.secondary{background:#eef3fb;color:#173b72}.msg{margin-top:14px;padding:12px;border-radius:8px}.ok{background:#dcfae6;color:#067647}.err{background:#fee4e2;color:#b42318}.list{margin-top:16px;max-height:360px;overflow:auto;border:1px solid #e5e7eb;border-radius:10px}.item{padding:10px 12px;border-bottom:1px solid #e5e7eb;font-size:13px}.item:last-child{border-bottom:0}.num{font-family:monospace;font-weight:bold}</style>
+</head>
+<body><div class="wrap"><div class="card"><span class="tag">e-SAJ / TJSP</span><h2>Preparar atualização em lote</h2><p class="small">Esta página monta a lista dos processos TJSP cadastrados no SIG. Depois, a extensão usa sua sessão já autenticada no e-SAJ para consultar cada processo. Certificado, token e PIN permanecem no computador.</p><div id="sessao" class="small"></div><div id="contagem" class="small" style="margin-top:8px"></div><div class="row"><button id="copiar" class="primary">Copiar lote para o conector</button><button id="recarregar" class="secondary">Recarregar lista</button><button id="voltar" class="secondary">Voltar ao SIG</button></div><div id="msg"></div><div id="lista" class="list"></div></div></div>
+<script>
+const SUPA_URL='https://dmvytzyfzeytfrddyucv.supabase.co';
+const SUPA_KEY='sb_publishable_ds9oZD_c1nMz9MwK-E4bTA_gzh4ubsb';
+const sb=supabase.createClient(SUPA_URL,SUPA_KEY),$=x=>document.getElementById(x);let user=null,processos=[];
+function norm(v){return String(v||'').replace(/\D/g,'')}
+function show(t,ok=false){$('msg').className='msg '+(ok?'ok':'err');$('msg').textContent=t}
+async function load(){
+  $('msg').className='';$('msg').textContent='';
+  const {data:s}=await sb.auth.getSession();user=s.session?.user||null;
+  if(!user){$('sessao').textContent='Você não está conectado ao SIG. Abra o SIG, faça login e volte aqui.';$('copiar').disabled=true;return}
+  $('sessao').textContent='SIG conectado: '+user.email;
+  const {data,error}=await sb.from('processos').select('id,numero_cnj,titulo,tribunal,status').order('titulo');
+  if(error){show(error.message);return}
+  processos=(data||[]).filter(p=>{const n=norm(p.numero_cnj);return n.length===20&&(n.slice(13,16)==='826'||String(p.tribunal||'').toUpperCase()==='TJSP')&&p.status!=='arquivado'});
+  $('contagem').textContent=`${processos.length} processo(s) TJSP ativo(s) preparado(s) para consulta.`;
+  $('lista').innerHTML=processos.length?processos.map(p=>`<div class="item"><span class="num">${p.numero_cnj||''}</span> — ${String(p.titulo||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}</div>`).join(''):'<div class="item">Nenhum processo TJSP encontrado.</div>';
+  $('copiar').disabled=!processos.length;
+}
+$('copiar').onclick=async()=>{try{const pacote={tipo:'SIG_ESAJ_LOTE',gerado_em:new Date().toISOString(),processos:processos.map(p=>({id:p.id,numero_cnj:p.numero_cnj,titulo:p.titulo}))};await navigator.clipboard.writeText(JSON.stringify(pacote));show(`Lote com ${processos.length} processo(s) copiado. Agora clique na extensão SIG — Conector e-SAJ e escolha “Atualizar lote copiado”.`,true)}catch(e){show('Não foi possível copiar o lote: '+(e.message||e))}};
+$('recarregar').onclick=load;$('voltar').onclick=()=>location.href='v2.html';load();
+</script></body></html>
