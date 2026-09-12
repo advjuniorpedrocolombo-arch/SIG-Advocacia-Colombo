@@ -14,14 +14,27 @@
     const r=await fetch(fonte,{cache:'no-store'});
     if(!r.ok) throw new Error('HTTP '+r.status);
     let html=await r.text();
+
+    html=html.replace(
+      "const t=await fetch('index.html').then(r=>r.text());",
+      "const t=await fetch('esaj-importador.html?ts='+Date.now(),{cache:'no-store'}).then(r=>r.text());"
+    );
+
     html=html.replace(
       '<button class="secondary" id="btnAtualizarTodos" onclick="atualizarTodos(this)">Atualizar todos</button>',
       '<button class="secondary" id="btnAtualizarTodos" onclick="location.href=\'esaj-lote.html\'">Atualizar e-SAJ (lote)</button>'
     );
+
     html=html.replace(
       'Cadastre individualmente ou importe vários números CNJ de uma vez. A atualização tenta as fontes gratuitas disponíveis.',
       'Cadastre individualmente ou importe vários números CNJ de uma vez. Para processos TJSP, use a atualização em lote pela sessão autenticada do e-SAJ.'
     );
+
+    html=html.replace(
+      "const encontrados=[...raw.matchAll(/\\d[\\d.\\-\\s]{15,30}\\d/g)].map(m=>normalizaCNJ(m[0])).filter(n=>n.length===20);",
+      "const encontrados=(raw.match(/\\d{7}-\\d{2}\\.\\d{4}\\.\\d\\.\\d{2}\\.\\d{4}/g)||[]).map(normalizaCNJ).filter(n=>n.length===20);"
+    );
+
     document.open();
     document.write(html);
     document.close();
