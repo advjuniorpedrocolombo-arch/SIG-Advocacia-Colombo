@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SIG — Advocacia Colombo</title>
+</head>
+<body>
+<div id="loader" style="font-family:Arial,sans-serif;padding:32px;text-align:center">Carregando SIG...</div>
+<script>
+(async()=>{
+  try{
+    const r=await fetch('v2.html?ts='+Date.now(),{cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    let html=await r.text();
+
+    html=html.replace(
+      '<button class="secondary" id="btnAtualizarTodos" onclick="atualizarTodos(this)">Atualizar todos</button>',
+      '<button class="secondary" id="btnAtualizarTodos" onclick="location.href=\'esaj-lote.html\'">Atualizar e-SAJ (lote)</button>'
+    );
+
+    html=html.replace(
+      'Cadastre individualmente ou importe vários números CNJ de uma vez. A atualização tenta as fontes gratuitas disponíveis.',
+      'Cadastre individualmente ou importe vários números CNJ de uma vez. Para processos TJSP, use a atualização em lote pela sessão autenticada do e-SAJ.'
+    );
+
+    document.open();
+    document.write(html);
+    document.close();
+  }catch(e){
+    document.getElementById('loader').textContent='Falha ao carregar o SIG: '+e.message;
+  }
+})();
+</script>
+</body>
+</html>
