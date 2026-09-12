@@ -1,149 +1,16 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SIG — Advocacia Colombo</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    :root{--bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#6b7280;--line:#e5e7eb;--brand:#173b72;--brand2:#245ca8;--danger:#b42318;--ok:#067647;--warn:#b54708;--shadow:0 10px 30px rgba(17,24,39,.08)}
-    *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink)}
-    button,input,select,textarea{font:inherit} button{cursor:pointer}.hidden{display:none!important}
-    .login-wrap{min-height:100vh;display:grid;place-items:center;padding:24px;background:linear-gradient(135deg,#102c55,#245ca8)}
-    .login-card{width:min(440px,100%);background:#fff;border-radius:22px;padding:30px;box-shadow:var(--shadow)}
-    .brand{display:flex;gap:14px;align-items:center;margin-bottom:22px}.brand-mark{width:50px;height:50px;border-radius:14px;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:800;font-size:20px}.brand h1{font-size:22px;margin:0}.brand p{margin:4px 0 0;color:var(--muted);font-size:13px}
-    label{display:block;font-size:13px;font-weight:700;margin:13px 0 6px} input,select,textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:#fff} textarea{min-height:90px;resize:vertical}
-    .btn{border:0;border-radius:10px;padding:11px 14px;font-weight:700}.btn-primary{background:var(--brand);color:#fff}.btn-secondary{background:#eef3fb;color:var(--brand)}.btn-danger{background:#fee4e2;color:var(--danger)}.btn-sm{padding:7px 10px;font-size:12px}
-    .login-actions{display:flex;gap:8px;margin-top:18px}.login-actions .btn{flex:1}.msg{margin-top:12px;padding:10px;border-radius:8px;font-size:13px}.msg.err{background:#fee4e2;color:var(--danger)}.msg.ok{background:#dcfae6;color:var(--ok)}
-    .app{min-height:100vh;display:grid;grid-template-columns:250px 1fr}.sidebar{background:#102c55;color:#fff;padding:22px 16px;position:sticky;top:0;height:100vh}.sidebar .brand{margin-bottom:28px}.sidebar .brand p{color:#c5d4ea}.nav{display:grid;gap:7px}.nav button{border:0;background:transparent;color:#d8e4f3;text-align:left;padding:11px 12px;border-radius:10px;font-weight:700}.nav button.active,.nav button:hover{background:#1c467f;color:#fff}.side-bottom{position:absolute;bottom:18px;left:16px;right:16px}.userbox{font-size:12px;color:#d8e4f3;margin-bottom:8px;word-break:break-all}
-    .main{padding:26px}.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}.topbar h2{margin:0;font-size:26px}.topbar .date{color:var(--muted);font-size:13px}
-    .cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:18px;box-shadow:0 1px 2px rgba(0,0,0,.02)}.metric .n{font-size:30px;font-weight:800;margin-top:7px}.metric .t{font-size:13px;color:var(--muted)}
-    .grid2{display:grid;grid-template-columns:1.1fr .9fr;gap:14px;margin-top:14px}.section-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}.section-title h3{margin:0;font-size:17px}
-    .list{display:grid;gap:9px}.item{border:1px solid var(--line);border-radius:11px;padding:12px;background:#fff}.item b{display:block}.item small{color:var(--muted)}.tag{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:800;background:#eef3fb;color:var(--brand)}.tag.urgent{background:#fee4e2;color:var(--danger)}
-    .toolbar{display:flex;justify-content:space-between;gap:10px;margin-bottom:14px}.toolbar input{max-width:360px}.table-wrap{overflow:auto;background:#fff;border:1px solid var(--line);border-radius:14px}table{width:100%;border-collapse:collapse;min-width:760px}th,td{padding:12px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}th{background:#f8fafc;color:#475467}tr:last-child td{border-bottom:0}
-    .modal{position:fixed;inset:0;background:rgba(15,23,42,.55);display:grid;place-items:center;padding:20px;z-index:20}.modal-box{background:#fff;width:min(720px,100%);max-height:90vh;overflow:auto;border-radius:18px;padding:22px}.modal-head{display:flex;justify-content:space-between;align-items:center}.modal-head h3{margin:0}.x{border:0;background:#f2f4f7;border-radius:8px;padding:8px 10px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}.span2{grid-column:1/-1}.form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
-    .empty{padding:26px;text-align:center;color:var(--muted)}
-    @media(max-width:900px){.app{grid-template-columns:1fr}.sidebar{height:auto;position:static}.side-bottom{position:static;margin-top:20px}.nav{grid-template-columns:repeat(4,1fr)}.nav button{text-align:center}.cards{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}.main{padding:16px}}
-    @media(max-width:560px){.cards{grid-template-columns:1fr}.nav{grid-template-columns:1fr 1fr}.form-grid{grid-template-columns:1fr}.span2{grid-column:auto}.topbar{align-items:flex-start;gap:8px;flex-direction:column}}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SIG — Advocacia Colombo</title>
+<meta http-equiv="refresh" content="0;url=v2.html">
 </head>
 <body>
-<div id="authView" class="login-wrap">
-  <div class="login-card">
-    <div class="brand"><div class="brand-mark">AC</div><div><h1>SIG — Advocacia Colombo</h1><p>Sistema Integrado de Gestão Jurídica</p></div></div>
-    <label>E-mail</label><input id="email" type="email" autocomplete="email" placeholder="seu@email.com">
-    <label>Senha</label><input id="password" type="password" autocomplete="current-password" placeholder="••••••••">
-    <div class="login-actions"><button class="btn btn-primary" id="btnLogin">Entrar</button><button class="btn btn-secondary" id="btnSignup">Criar acesso</button></div>
-    <div id="authMsg"></div>
-  </div>
-</div>
-
-<div id="appView" class="app hidden">
-  <aside class="sidebar">
-    <div class="brand"><div class="brand-mark">AC</div><div><h1 style="font-size:18px">Advocacia Colombo</h1><p>SIG Jurídico</p></div></div>
-    <div class="nav">
-      <button data-page="dashboard" class="active">Painel</button>
-      <button data-page="clientes">Clientes</button>
-      <button data-page="processos">Processos</button>
-      <button data-page="agenda">Agenda</button>
-    </div>
-    <div class="side-bottom"><div class="userbox" id="userEmail"></div><button class="btn btn-secondary" style="width:100%" id="btnLogout">Sair</button></div>
-  </aside>
-  <main class="main">
-    <div class="topbar"><div><h2 id="pageTitle">Painel Jurídico</h2><div class="date" id="todayLabel"></div></div><div><span class="tag">OAB/SP 510.497</span></div></div>
-
-    <section id="page-dashboard" class="page">
-      <div class="cards">
-        <div class="card metric"><div class="t">Processos ativos</div><div class="n" id="mProcessos">0</div></div>
-        <div class="card metric"><div class="t">Clientes ativos</div><div class="n" id="mClientes">0</div></div>
-        <div class="card metric"><div class="t">Compromissos próximos</div><div class="n" id="mAgenda">0</div></div>
-        <div class="card metric"><div class="t">Prazos pendentes</div><div class="n" id="mPrazos">0</div></div>
-      </div>
-      <div class="grid2">
-        <div class="card"><div class="section-title"><h3>Agenda próxima</h3><button class="btn btn-secondary btn-sm" onclick="openEventModal()">+ Compromisso</button></div><div id="dashAgenda" class="list"></div></div>
-        <div class="card"><div class="section-title"><h3>Atenção</h3></div><div id="dashPrazos" class="list"></div></div>
-      </div>
-    </section>
-
-    <section id="page-clientes" class="page hidden">
-      <div class="toolbar"><input id="searchClientes" placeholder="Buscar cliente..."><button class="btn btn-primary" onclick="openClienteModal()">+ Novo cliente</button></div>
-      <div class="table-wrap"><table><thead><tr><th>Nome</th><th>CPF/CNPJ</th><th>Telefone</th><th>E-mail</th><th>Status</th><th></th></tr></thead><tbody id="clientesBody"></tbody></table></div>
-    </section>
-
-    <section id="page-processos" class="page hidden">
-      <div class="toolbar"><input id="searchProcessos" placeholder="Buscar processo, cliente ou parte..."><button class="btn btn-primary" onclick="openProcessoModal()">+ Novo processo</button></div>
-      <div class="table-wrap"><table><thead><tr><th>Número CNJ</th><th>Título</th><th>Área</th><th>Tribunal/Vara</th><th>Status</th><th></th></tr></thead><tbody id="processosBody"></tbody></table></div>
-    </section>
-
-    <section id="page-agenda" class="page hidden">
-      <div class="toolbar"><input id="searchAgenda" placeholder="Buscar compromisso..."><button class="btn btn-primary" onclick="openEventModal()">+ Novo compromisso</button></div>
-      <div class="table-wrap"><table><thead><tr><th>Data/Hora</th><th>Tipo</th><th>Título</th><th>Local</th><th>Status</th><th></th></tr></thead><tbody id="agendaBody"></tbody></table></div>
-    </section>
-  </main>
-</div>
-
-<div id="modalCliente" class="modal hidden"><div class="modal-box"><div class="modal-head"><h3>Novo cliente</h3><button class="x" onclick="closeModal('modalCliente')">✕</button></div><form id="formCliente" class="form-grid"><div class="span2"><label>Nome *</label><input name="nome" required></div><div><label>CPF/CNPJ</label><input name="cpf_cnpj"></div><div><label>Telefone</label><input name="telefone"></div><div><label>E-mail</label><input name="email" type="email"></div><div><label>Endereço</label><input name="endereco"></div><div class="span2"><label>Observações</label><textarea name="observacoes"></textarea></div><div class="form-actions span2"><button type="button" class="btn btn-secondary" onclick="closeModal('modalCliente')">Cancelar</button><button class="btn btn-primary">Salvar</button></div></form></div></div>
-
-<div id="modalProcesso" class="modal hidden"><div class="modal-box"><div class="modal-head"><h3>Novo processo</h3><button class="x" onclick="closeModal('modalProcesso')">✕</button></div><form id="formProcesso" class="form-grid"><div><label>Número CNJ</label><input name="numero_cnj" placeholder="0000000-00.0000.0.00.0000"></div><div><label>Cliente</label><select name="cliente_id" id="procCliente"><option value="">Sem vínculo</option></select></div><div class="span2"><label>Título *</label><input name="titulo" required placeholder="Ex.: Alimentos — João da Silva"></div><div><label>Área</label><select name="area"><option value="">Selecione</option><option>Família</option><option>Cível</option><option>Consumidor</option><option>Trabalhista</option><option>Penal</option><option>Previdenciário</option><option>Sucessões</option><option>Tributário</option><option>Outro</option></select></div><div><label>Classe processual</label><input name="classe_processual"></div><div><label>Tribunal</label><input name="tribunal" placeholder="TJSP, TRT-2..."></div><div><label>Comarca</label><input name="comarca"></div><div><label>Vara</label><input name="vara"></div><div><label>Parte contrária</label><input name="parte_contraria"></div><div><label>Polo do cliente</label><select name="polo_cliente"><option value="">Selecione</option><option>Autor</option><option>Réu</option><option>Reclamante</option><option>Reclamado</option><option>Requerente</option><option>Requerido</option><option>Outro</option></select></div><div><label>Data de distribuição</label><input name="data_distribuicao" type="date"></div><div class="span2"><label>Observações</label><textarea name="observacoes"></textarea></div><div class="form-actions span2"><button type="button" class="btn btn-secondary" onclick="closeModal('modalProcesso')">Cancelar</button><button class="btn btn-primary">Salvar</button></div></form></div></div>
-
-<div id="modalEvento" class="modal hidden"><div class="modal-box"><div class="modal-head"><h3>Novo compromisso</h3><button class="x" onclick="closeModal('modalEvento')">✕</button></div><form id="formEvento" class="form-grid"><div class="span2"><label>Título *</label><input name="titulo" required></div><div><label>Tipo</label><select name="tipo"><option value="compromisso">Compromisso</option><option value="audiencia">Audiência</option><option value="reuniao">Reunião</option><option value="atendimento">Atendimento</option><option value="pericia">Perícia</option><option value="outro">Outro</option></select></div><div><label>Início *</label><input name="inicio" type="datetime-local" required></div><div><label>Fim</label><input name="fim" type="datetime-local"></div><div><label>Local</label><input name="local"></div><div><label>Processo</label><select name="processo_id" id="evtProcesso"><option value="">Sem vínculo</option></select></div><div><label>Cliente</label><select name="cliente_id" id="evtCliente"><option value="">Sem vínculo</option></select></div><div class="span2"><label>Descrição</label><textarea name="descricao"></textarea></div><div class="form-actions span2"><button type="button" class="btn btn-secondary" onclick="closeModal('modalEvento')">Cancelar</button><button class="btn btn-primary">Salvar</button></div></form></div></div>
-
-<script>
-const SUPABASE_URL='https://dmvytzyfzeytfrddyucv.supabase.co';
-const SUPABASE_KEY='sb_publishable_ds9oZD_c1nMz9MwK-E4bTA_gzh4ubsb';
-const { createClient }=supabase; const db=createClient(SUPABASE_URL,SUPABASE_KEY);
-let currentUser=null, clientes=[], processos=[], agenda=[], prazos=[];
-const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
-function esc(v=''){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
-function fmtDate(v){if(!v)return '—';return new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short'}).format(new Date(v))}
-function setMsg(text,type='err'){const e=$('#authMsg');e.className='msg '+type;e.textContent=text}
-function clearMsg(){$('#authMsg').className='';$('#authMsg').textContent=''}
-async function login(){clearMsg();const email=$('#email').value.trim(),password=$('#password').value;if(!email||!password)return setMsg('Informe e-mail e senha.');const {error}=await db.auth.signInWithPassword({email,password});if(error)setMsg(error.message)}
-async function signup(){clearMsg();const email=$('#email').value.trim(),password=$('#password').value;if(!email||password.length<6)return setMsg('Informe um e-mail válido e senha com pelo menos 6 caracteres.');const {data,error}=await db.auth.signUp({email,password});if(error)return setMsg(error.message);if(data.session)setMsg('Acesso criado com sucesso.','ok');else setMsg('Cadastro criado. Confira seu e-mail para confirmar o acesso.','ok')}
-async function logout(){await db.auth.signOut()}
-$('#btnLogin').onclick=login;$('#btnSignup').onclick=signup;$('#btnLogout').onclick=logout;
-$('#password').addEventListener('keydown',e=>{if(e.key==='Enter')login()});
-
-db.auth.onAuthStateChange((_event,session)=>{currentUser=session?.user||null;renderAuth();if(currentUser)loadAll()});
-async function renderAuth(){if(currentUser){$('#authView').classList.add('hidden');$('#appView').classList.remove('hidden');$('#userEmail').textContent=currentUser.email||''}else{$('#appView').classList.add('hidden');$('#authView').classList.remove('hidden')}}
-
-$$('.nav button').forEach(b=>b.onclick=()=>showPage(b.dataset.page));
-function showPage(page){$$('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===page));$$('.page').forEach(p=>p.classList.add('hidden'));$('#page-'+page).classList.remove('hidden');const titles={dashboard:'Painel Jurídico',clientes:'Clientes',processos:'Processos',agenda:'Agenda'};$('#pageTitle').textContent=titles[page]||'SIG'}
-function openClienteModal(){$('#formCliente').reset();$('#modalCliente').classList.remove('hidden')}
-function openProcessoModal(){fillSelects();$('#formProcesso').reset();$('#modalProcesso').classList.remove('hidden')}
-function openEventModal(){fillSelects();$('#formEvento').reset();$('#modalEvento').classList.remove('hidden')}
-function closeModal(id){$('#'+id).classList.add('hidden')}
-window.openClienteModal=openClienteModal;window.openProcessoModal=openProcessoModal;window.openEventModal=openEventModal;window.closeModal=closeModal;
-
-async function loadAll(){if(!currentUser)return;const [c,p,a,z]=await Promise.all([
- db.from('clientes').select('*').order('nome'),
- db.from('processos').select('*').order('criado_em',{ascending:false}),
- db.from('eventos_agenda').select('*').order('inicio',{ascending:true}),
- db.from('prazos').select('*').in('status',['pendente','em_andamento']).order('data_limite',{ascending:true})
-]);
- if(c.error||p.error||a.error||z.error){console.error(c.error||p.error||a.error||z.error);return}
- clientes=c.data||[];processos=p.data||[];agenda=a.data||[];prazos=z.data||[];renderAll()}
-function renderAll(){renderDashboard();renderClientes();renderProcessos();renderAgenda();fillSelects()}
-function renderDashboard(){
- $('#mClientes').textContent=clientes.filter(x=>x.ativo!==false).length;$('#mProcessos').textContent=processos.filter(x=>x.status==='ativo').length;const now=new Date(),limit=new Date(Date.now()+30*864e5);const prox=agenda.filter(x=>new Date(x.inicio)>=now&&new Date(x.inicio)<=limit&&x.status==='agendado');$('#mAgenda').textContent=prox.length;$('#mPrazos').textContent=prazos.length;
- $('#dashAgenda').innerHTML=prox.slice(0,6).map(x=>`<div class="item"><b>${esc(x.titulo)}</b><small>${fmtDate(x.inicio)}${x.local?' • '+esc(x.local):''}</small></div>`).join('')||'<div class="empty">Nenhum compromisso próximo.</div>';
- $('#dashPrazos').innerHTML=prazos.slice(0,6).map(x=>{const d=new Date(x.data_limite),urg=(d-now)<3*864e5;return `<div class="item"><span class="tag ${urg?'urgent':''}">${esc(x.prioridade)}</span><b style="margin-top:6px">${esc(x.titulo)}</b><small>Limite: ${fmtDate(x.data_limite)}</small></div>`}).join('')||'<div class="empty">Nenhum prazo pendente.</div>';
-}
-function renderClientes(filter=''){const f=filter.toLowerCase();const rows=clientes.filter(x=>(x.nome+' '+(x.cpf_cnpj||'')+' '+(x.email||'')).toLowerCase().includes(f));$('#clientesBody').innerHTML=rows.map(x=>`<tr><td><b>${esc(x.nome)}</b></td><td>${esc(x.cpf_cnpj||'—')}</td><td>${esc(x.telefone||'—')}</td><td>${esc(x.email||'—')}</td><td><span class="tag">${x.ativo===false?'Inativo':'Ativo'}</span></td><td><button class="btn btn-danger btn-sm" onclick="delCliente('${x.id}')">Excluir</button></td></tr>`).join('')||'<tr><td colspan="6" class="empty">Nenhum cliente cadastrado.</td></tr>'}
-function renderProcessos(filter=''){const f=filter.toLowerCase();const rows=processos.filter(x=>([x.numero_cnj,x.titulo,x.area,x.parte_contraria].join(' ')).toLowerCase().includes(f));$('#processosBody').innerHTML=rows.map(x=>`<tr><td>${esc(x.numero_cnj||'—')}</td><td><b>${esc(x.titulo)}</b><br><small>${esc(x.parte_contraria||'')}</small></td><td>${esc(x.area||'—')}</td><td>${esc([x.tribunal,x.vara].filter(Boolean).join(' • ')||'—')}</td><td><span class="tag">${esc(x.status)}</span></td><td><button class="btn btn-danger btn-sm" onclick="delProcesso('${x.id}')">Excluir</button></td></tr>`).join('')||'<tr><td colspan="6" class="empty">Nenhum processo cadastrado.</td></tr>'}
-function renderAgenda(filter=''){const f=filter.toLowerCase();const rows=agenda.filter(x=>([x.titulo,x.tipo,x.local].join(' ')).toLowerCase().includes(f));$('#agendaBody').innerHTML=rows.map(x=>`<tr><td>${fmtDate(x.inicio)}</td><td>${esc(x.tipo)}</td><td><b>${esc(x.titulo)}</b></td><td>${esc(x.local||'—')}</td><td><span class="tag">${esc(x.status)}</span></td><td><button class="btn btn-danger btn-sm" onclick="delEvento('${x.id}')">Excluir</button></td></tr>`).join('')||'<tr><td colspan="6" class="empty">Nenhum compromisso cadastrado.</td></tr>'}
-function fillSelects(){const copts='<option value="">Sem vínculo</option>'+clientes.map(x=>`<option value="${x.id}">${esc(x.nome)}</option>`).join('');const popts='<option value="">Sem vínculo</option>'+processos.map(x=>`<option value="${x.id}">${esc(x.numero_cnj||'')} ${esc(x.titulo)}</option>`).join('');$('#procCliente').innerHTML=copts;$('#evtCliente').innerHTML=copts;$('#evtProcesso').innerHTML=popts}
-$('#searchClientes').oninput=e=>renderClientes(e.target.value);$('#searchProcessos').oninput=e=>renderProcessos(e.target.value);$('#searchAgenda').oninput=e=>renderAgenda(e.target.value);
-
-$('#formCliente').onsubmit=async e=>{e.preventDefault();const o=Object.fromEntries(new FormData(e.target));o.user_id=currentUser.id;const {error}=await db.from('clientes').insert(o);if(error)return alert('Erro: '+error.message);closeModal('modalCliente');await loadAll()};
-$('#formProcesso').onsubmit=async e=>{e.preventDefault();const o=Object.fromEntries(new FormData(e.target));o.user_id=currentUser.id;Object.keys(o).forEach(k=>{if(o[k]==='')o[k]=null});const {error}=await db.from('processos').insert(o);if(error)return alert('Erro: '+error.message);closeModal('modalProcesso');await loadAll()};
-$('#formEvento').onsubmit=async e=>{e.preventDefault();const o=Object.fromEntries(new FormData(e.target));o.user_id=currentUser.id;Object.keys(o).forEach(k=>{if(o[k]==='')o[k]=null});if(o.inicio)o.inicio=new Date(o.inicio).toISOString();if(o.fim)o.fim=new Date(o.fim).toISOString();const {error}=await db.from('eventos_agenda').insert(o);if(error)return alert('Erro: '+error.message);closeModal('modalEvento');await loadAll()};
-async function delCliente(id){if(!confirm('Excluir este cliente?'))return;const {error}=await db.from('clientes').delete().eq('id',id);if(error)return alert('Não foi possível excluir: '+error.message);loadAll()}
-async function delProcesso(id){if(!confirm('Excluir este processo?'))return;const {error}=await db.from('processos').delete().eq('id',id);if(error)return alert('Não foi possível excluir: '+error.message);loadAll()}
-async function delEvento(id){if(!confirm('Excluir este compromisso?'))return;const {error}=await db.from('eventos_agenda').delete().eq('id',id);if(error)return alert('Não foi possível excluir: '+error.message);loadAll()}
-window.delCliente=delCliente;window.delProcesso=delProcesso;window.delEvento=delEvento;
-$('#todayLabel').textContent=new Intl.DateTimeFormat('pt-BR',{dateStyle:'full'}).format(new Date());
-(async()=>{const {data}=await db.auth.getSession();currentUser=data.session?.user||null;renderAuth();if(currentUser)loadAll()})();
-</script>
+<!-- Configuração pública utilizada pela V2 -->
+<!-- https://dmvytzyfzeytfrddyucv.supabase.co -->
+<!-- sb_publishable_ds9oZD_c1nMz9MwK-E4bTA_gzh4ubsb -->
+<p>Abrindo o SIG — Advocacia Colombo...</p>
+<script>location.replace('v2.html?v=20260912-main');</script>
 </body>
 </html>
