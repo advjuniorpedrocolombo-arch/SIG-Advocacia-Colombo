@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Conector e-SAJ</title>
+<style>
+body{font-family:Arial,sans-serif;width:340px;margin:0;padding:16px;background:#f5f7fb;color:#172033}h2{margin:0 0 6px;font-size:18px}p{font-size:12px;color:#667085;line-height:1.4}label{font-size:12px;font-weight:bold}input,button{width:100%;box-sizing:border-box;margin-top:6px;margin-bottom:10px;padding:10px;border-radius:8px;font:inherit}input{border:1px solid #d0d5dd}button{border:0;cursor:pointer}.primary{background:#173b72;color:#fff}.secondary{background:#eef3fb;color:#173b72}.msg{font-size:12px;padding:9px;border-radius:8px;margin-top:8px}.ok{background:#dcfae6;color:#067647}.err{background:#fee4e2;color:#b42318}.hidden{display:none}.status{font-size:11px;color:#667085;margin:2px 0 10px}
+</style>
+</head>
+<body>
+<h2>SIG — Conector e-SAJ</h2>
+<p>Usa a sessão autenticada do e-SAJ neste navegador. Seu certificado e PIN não são enviados ao SIG.</p>
+<div id="loginBox">
+<label>E-mail do SIG</label><input id="email" type="email" autocomplete="username">
+<label>Senha do SIG</label><input id="senha" type="password" autocomplete="current-password">
+<button id="login" class="secondary">Conectar ao SIG</button>
+</div>
+<div id="connected" class="hidden">
+<div class="status" id="who"></div>
+<button id="enviar" class="primary">Enviar processo aberto ao SIG</button>
+<button id="logout" class="secondary">Desconectar do SIG</button>
+</div>
+<div id="msg"></div>
+<script src="popup.js"></script>
+</body>
+</html>
