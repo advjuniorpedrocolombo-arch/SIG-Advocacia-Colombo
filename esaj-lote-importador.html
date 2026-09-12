@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SIG — Importador em lote e-SAJ</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>body{margin:0;font-family:Arial,sans-serif;background:#f5f7fb;color:#172033}.wrap{max-width:980px;margin:36px auto;padding:20px}.card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:24px}.tag{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef3fb;color:#173b72;font-size:12px;font-weight:bold}.small{font-size:13px;color:#667085;line-height:1.5}.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}button{border:0;border-radius:8px;padding:11px 16px;cursor:pointer;font:inherit}.primary{background:#173b72;color:#fff}.secondary{background:#eef3fb;color:#173b72}.msg{margin-top:14px;padding:12px;border-radius:8px;white-space:pre-wrap}.ok{background:#dcfae6;color:#067647}.err{background:#fee4e2;color:#b42318}.table{margin-top:16px;overflow:auto;border:1px solid #e5e7eb;border-radius:10px}table{width:100%;border-collapse:collapse;min-width:760px}th,td{padding:9px 10px;border-bottom:1px solid #e5e7eb;text-align:left;font-size:12px}th{background:#f8fafc}.good{color:#067647;font-weight:bold}.bad{color:#b42318;font-weight:bold}</style>
+</head>
+<body><div class="wrap"><div class="card"><span class="tag">e-SAJ / TJSP</span><h2>Importar atualização em lote</h2><p class="small">A extensão concluiu a varredura no e-SAJ. Clique abaixo para gravar no SIG somente as movimentações que ainda não existem.</p><div id="sessao" class="small"></div><div class="row"><button id="importar" class="primary">Importar resultados do lote</button><button id="voltar" class="secondary">Voltar ao SIG</button></div><div id="msg"></div><div id="tabela" class="table" style="display:none"><table><thead><tr><th>Processo</th><th>Captura</th><th>Novas movimentações</th><th>Resultado</th></tr></thead><tbody id="tbody"></tbody></table></div></div></div>
+<script>
+const SUPA_URL='https://dmvytzyfzeytfrddyucv.supabase.co';
+const SUPA_KEY='sb_publishable_ds9oZD_c1nMz9MwK-E4bTA_gzh4ubsb';
+const sb=supabase.createClient(SUPA_URL,SUPA_KEY),$=x=>document.getElementById(x);let user=null;
+function norm(v){return String(v||'').replace(/\D/g,'')}
+function fmt(n){n=norm(n);return n.replace(/^(\d{7})(\d{2})(\d{4})(\d)(\d{2})(\d{4})$/,'$1-$2.$3.$4.$5.$6')}
+function clean(s){return String(s||'').replace(/\s+/g,' ').trim()}
+function show(t,ok=false){$('msg').className='msg '+(ok?'ok':'err');$('msg').textContent=t}
+function parseData(s){const m=String(s||'').match(/(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}))?/);if(!m)return new Date().toISOString();return new Date(Number(m[3]),Number(m[2])-1,Number(m[1]),Number(m[4]||12),Number(m[5]||0)).toISOString()}
+async function sessao(){const {data}=await sb.auth.getSession();user=data.session?.user||null;$('sessao').textContent=user?'SIG conectado: '+user.email:'Você não está conectado ao SIG. Abra o SIG, faça login e volte aqui.';return user}
+async function localizarProc(item){
+  let proc=null;
+  if(item.processo_id){const r=await sb.from('processos').select('id,user_id,numero_cnj,titulo').eq('id',item.processo_id).maybeSingle();if(r.error)throw r.error;proc=r.data}
+  if(!proc){const numero=fmt(item.numero_cnj);const r=await sb.from('processos').select('id,user_id,numero_cnj,titulo').eq('numero_cnj',numero).limit(1);if(r.error)throw r.error;proc=r.data?.[0]||null}
+  if(!proc){const p=item.payload||{},numero=fmt(item.numero_cnj||p.numero_cnj);const r=await sb.from('processos').insert({user_id:user.id,numero_cnj:numero,titulo:p.classe?`${p.classe} — ${numero}`:`Processo ${numero}`,tribunal:'TJSP',comarca:p.foro||null,vara:p.vara||null,status:'ativo',monitorar_datajud:true,datajud_status:'Importado do e-SAJ'}).select('id,user_id,numero_cnj,titulo').single();if(r.error)throw r.error;proc=r.data}
+  return proc;
+}
+async function importarItem(item){
+  if(!item.ok)return {novas:0,status:'Falha na captura: '+(item.erro||'erro não informado'),ok:false};
+  const p=item.payload||{},proc=await localizarProc(item);
+  const r=await sb.from('movimentacoes').select('descricao').eq('processo_id',proc.id).limit(3000);if(r.error)throw r.error;
+  const existentes=new Set((r.data||[]).map(x=>clean(x.descricao).toLowerCase()));
+  const unicas=[];const seen=new Set();
+  for(const m of (p.movimentos||[])){const d=clean(m.descricao);const k=d.toLowerCase();if(!d||existentes.has(k)||seen.has(k))continue;seen.add(k);unicas.push(m)}
+  if(unicas.length){const rows=unicas.map(m=>({user_id:user.id,processo_id:proc.id,data_movimentacao:parseData(m.data),descricao:clean(m.descricao),origem:'e-SAJ (atualização em lote)',nova:true,analisada:false}));const ins=await sb.from('movimentacoes').insert(rows);if(ins.error)throw ins.error}
+  const up=await sb.from('processos').update({datajud_status:'Atualizado via e-SAJ',tribunal:'TJSP',comarca:p.foro||null,vara:p.vara||null}).eq('id',proc.id);if(up.error)throw up.error;
+  return {novas:unicas.length,status:'Atualizado',ok:true};
+}
+$('importar').onclick=async()=>{
+  try{
+    $('importar').disabled=true;show('Lendo os resultados da extensão...',true);if(!(await sessao()))throw new Error('Faça login no SIG antes de importar.');
+    const raw=await navigator.clipboard.readText();if(!raw)throw new Error('Não há resultados copiados pela extensão.');
+    let pacote;try{pacote=JSON.parse(raw)}catch(_){throw new Error('O conteúdo copiado não contém resultados válidos do conector e-SAJ.')}
+    if(pacote?.tipo!=='SIG_ESAJ_RESULTADOS'||!Array.isArray(pacote.resultados))throw new Error('O conteúdo copiado não é um resultado de atualização em lote do SIG.');
+    $('tabela').style.display='block';$('tbody').innerHTML='';let ok=0,erros=0,novas=0;
+    for(let i=0;i<pacote.resultados.length;i++){
+      const item=pacote.resultados[i];show(`Importando ${i+1}/${pacote.resultados.length}...`,true);let res;
+      try{res=await importarItem(item)}catch(e){res={novas:0,status:e?.message||String(e),ok:false}}
+      if(res.ok)ok++;else erros++;novas+=res.novas||0;
+      const tr=document.createElement('tr');tr.innerHTML=`<td>${fmt(item.numero_cnj||item.payload?.numero_cnj||'')}</td><td>${item.ok?'<span class="good">OK</span>':'<span class="bad">Falhou</span>'}</td><td>${res.novas||0}</td><td class="${res.ok?'good':'bad'}"></td>`;tr.lastElementChild.textContent=res.status;$('tbody').appendChild(tr);
+    }
+    show(`Atualização concluída.\nProcessos atualizados: ${ok}\nProcessos com falha: ${erros}\nNovas movimentações incluídas: ${novas}`,erros===0);
+  }catch(e){show(e?.message||String(e));}
+  finally{$('importar').disabled=false;}
+};
+$('voltar').onclick=()=>location.href='v2.html';sessao();
+</script></body></html>
