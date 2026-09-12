@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "SIG Advocacia Colombo — Conector e-SAJ",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Captura processos abertos ou atualiza em lote os processos do e-SAJ usando a sessão autenticada do navegador.",
   "permissions": ["storage", "activeTab", "tabs", "clipboardRead", "clipboardWrite"],
   "host_permissions": ["https://esaj.tjsp.jus.br/*"],
