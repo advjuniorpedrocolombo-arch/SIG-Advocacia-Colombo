@@ -1,0 +1,42 @@
+name: Atualizar interface SIG
+on:
+  push:
+    paths:
+      - '.github/workflows/update-sig-ui.yml'
+permissions:
+  contents: write
+jobs:
+  patch-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ajustar interface
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('v2.html')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('Use “Consultar DataJud” para importar novas movimentações do CNJ.','Use “Atualizar processo” para consultar automaticamente as fontes disponíveis (DataJud e tribunal).')
+          s=s.replace('<th>DataJud</th>','<th>Consulta</th>')
+          s=s.replace("function datajudLabel(x){if(x.datajud_status==='encontrado')return '<span class=\"tag ok\">Encontrado</span>';if(x.datajud_status==='nao_encontrado')return '<span class=\"tag warn\">Não encontrado</span>';if(x.datajud_status)return `<span class=\"tag\">${esc(x.datajud_status)}</span>`;return '<span class=\"tag\">Não consultado</span>'}","function datajudLabel(x){if(['Encontrado no DataJud','Encontrado no e-SAJ'].includes(x.datajud_status))return `<span class=\"tag ok\">${esc(x.datajud_status)}</span>`;if(x.datajud_status==='e-SAJ requer validação')return '<span class=\"tag warn\">e-SAJ requer validação</span>';if(x.datajud_status)return `<span class=\"tag\">${esc(x.datajud_status)}</span>`;return '<span class=\"tag\">Não consultado</span>'}")
+          old="${x.numero_cnj?`<button class=\"secondary btnData\" onclick=\"consultarDataJud('${x.id}',this)\">Consultar DataJud</button>`:'—'}"
+          new="${acaoProcesso(x)}"
+          if old not in s:
+              raise SystemExit('Trecho da ação não encontrado')
+          s=s.replace(old,new)
+          marker="async function init(){"
+          helper=r'''function acaoProcesso(x){if(!x.numero_cnj)return '—';let h=`<button class="secondary btnData" onclick="consultarDataJud('${x.id}',this)">Atualizar processo</button>`;if(x.datajud_status==='e-SAJ requer validação')h+=` <button class="secondary btnData" onclick="abrirEsaj('${esc(x.numero_cnj)}')">Abrir no e-SAJ</button>`;return h}function abrirEsaj(numero){const n=String(numero||'').replace(/\D/g,'');if(n.length!==20)return alert('Número CNJ inválido.');const fmt=n.replace(/^(\d{7})(\d{2})(\d{4})(\d)(\d{2})(\d{4})$/,'$1-$2.$3.$4.$5.$6');const ano=fmt.slice(0,15),foro=n.slice(-4);const q=new URLSearchParams({conversationId:'','dadosConsulta.localPesquisa.cdLocal':'-1',cbPesquisa:'NUMPROC','dadosConsulta.tipoNuProcesso':'UNIFICADO',numeroDigitoAnoUnificado:ano,foroNumeroUnificado:foro,'dadosConsulta.valorConsultaNuUnificado':fmt,'dadosConsulta.valorConsulta':''});window.open('https://esaj.tjsp.jus.br/cpopg/search.do?'+q.toString(),'_blank','noopener')}'''
+          if helper not in s:
+              s=s.replace(marker,helper+marker)
+          s=re.sub(r"async function consultarDataJud\(id,btn\)\{.*?\}async function done",'''async function consultarDataJud(id,btn){const antigo=btn.textContent;btn.disabled=true;btn.textContent='Atualizando...';try{const {data,error}=await sb.functions.invoke('consultar-datajud',{body:{processo_id:id}});if(error)throw error;if(data?.error)throw new Error(data.error);await load();if(data?.captcha){alert('O e-SAJ exige validação manual. Use o botão “Abrir no e-SAJ”.')}else if(data?.encontrado){alert(`Processo atualizado pela fonte ${data.fonte||'disponível'}. ${data.novas||0} nova(s) movimentação(ões) importada(s).`)}else{alert(`Nenhuma atualização automática localizada nesta consulta pela fonte ${data?.fonte||'disponível'}.`)} }catch(e){alert('Falha ao atualizar processo: '+(e?.message||e))}finally{btn.disabled=false;btn.textContent=antigo}}async function done''',s,flags=re.S)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name "SIG Automação"
+          git config user.email "actions@users.noreply.github.com"
+          git add v2.html
+          git commit -m "Aprimora atualização multifuente de processos"
+          git push
