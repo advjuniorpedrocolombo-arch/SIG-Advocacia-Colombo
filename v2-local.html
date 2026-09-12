@@ -24,6 +24,25 @@
       'Cadastre individualmente ou importe vários números CNJ de uma vez. Para processos TJSP, use a atualização em lote pela sessão autenticada do e-SAJ.'
     );
 
+    html=html.replace('</body>', `<script>
+window.importarLote=async function(){
+  const raw=document.getElementById('listaCnj').value||'';
+  const encontrados=[...raw.matchAll(/\\b\\d{7}-\\d{2}\\.\\d{4}\\.\\d\\.\\d{2}\\.\\d{4}\\b/g)]
+    .map(m=>String(m[0]).replace(/\\D/g,''))
+    .filter(n=>n.length===20);
+  const nums=[...new Set(encontrados)];
+  if(!nums.length)return alert('Nenhum número CNJ válido foi identificado.');
+  const existentes=new Set(D.processos.map(x=>normalizaCNJ(x.numero_cnj)));
+  const novos=nums.filter(n=>!existentes.has(n));
+  if(!novos.length){alert('Todos os processos informados já estão cadastrados.');return}
+  const rows=novos.map(n=>({user_id:U.id,numero_cnj:formataCNJ(n),titulo:'Processo '+formataCNJ(n),tribunal:tribunalDoCNJ(n),status:'ativo',monitorar_datajud:true}));
+  const {error}=await sb.from('processos').insert(rows);
+  if(error)return alert('Falha na importação: '+error.message);
+  document.getElementById('fImportar').reset();closeM('mImportar');await load();
+  alert(rows.length+' processo(s) importado(s). '+(nums.length-rows.length)+' já existente(s) ignorado(s).');
+};
+<\/script></body>`);
+
     document.open();
     document.write(html);
     document.close();
