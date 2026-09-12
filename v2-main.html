@@ -22,7 +22,7 @@
 
     html=html.replace(
       '<button class="secondary" id="btnAtualizarTodos" onclick="atualizarTodos(this)">Atualizar todos</button>',
-      '<button class="secondary" id="btnAtualizarTodos" onclick="location.href=\'esaj-lote.html\'">Atualizar e-SAJ (lote)</button>'
+      '<button type="button" class="secondary" id="btnAtualizarTodos" onclick="prepararLoteEsaj(this);return false;">Atualizar e-SAJ (lote)</button>'
     );
 
     html=html.replace(
@@ -34,6 +34,36 @@
       "const encontrados=[...raw.matchAll(/\\d[\\d.\\-\\s]{15,30}\\d/g)].map(m=>normalizaCNJ(m[0])).filter(n=>n.length===20);",
       "const encontrados=(raw.match(/\\d{7}-\\d{2}\\.\\d{4}\\.\\d\\.\\d{2}\\.\\d{4}/g)||[]).map(normalizaCNJ).filter(n=>n.length===20);"
     );
+
+    const loteScript = `
+<script>
+async function prepararLoteEsaj(btn){
+  const textoOriginal=btn?.textContent||'Atualizar e-SAJ (lote)';
+  try{
+    if(btn){btn.disabled=true;btn.textContent='Preparando lote...';}
+    const normaliza=v=>String(v||'').replace(/\\D/g,'');
+    const {data,error}=await sb.from('processos').select('id,numero_cnj,titulo,tribunal,status').order('titulo');
+    if(error) throw error;
+    const processos=(data||[]).filter(p=>{
+      const n=normaliza(p.numero_cnj);
+      return n.length===20 && (n.slice(13,16)==='826' || String(p.tribunal||'').toUpperCase()==='TJSP') && p.status!=='arquivado';
+    });
+    if(!processos.length){
+      alert('Nenhum processo TJSP ativo foi encontrado no SIG.');
+      return;
+    }
+    const pacote={tipo:'SIG_ESAJ_LOTE',gerado_em:new Date().toISOString(),processos:processos.map(p=>({id:p.id,numero_cnj:p.numero_cnj,titulo:p.titulo}))};
+    await navigator.clipboard.writeText(JSON.stringify(pacote));
+    alert('Lote com '+processos.length+' processo(s) TJSP preparado e copiado. Agora abra a extensão SIG — Conector e-SAJ e clique em “Atualizar lote copiado”. O SIG permanecerá nesta tela.');
+  }catch(e){
+    console.error(e);
+    alert('Não foi possível preparar o lote e-SAJ: '+(e?.message||e));
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent=textoOriginal;}
+  }
+}
+<\/script>`;
+    html=html.replace('</body>',loteScript+'\n</body>');
 
     document.open();
     document.write(html);
