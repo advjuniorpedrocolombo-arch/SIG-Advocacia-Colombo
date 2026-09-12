@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "SIG Advocacia Colombo — Conector e-SAJ",
+  "version": "1.0.0",
+  "description": "Importa dados do processo aberto no e-SAJ autenticado para o SIG Advocacia Colombo.",
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": [
+    "https://esaj.tjsp.jus.br/*",
+    "https://dmvytzyfzeytfrddyucv.supabase.co/*"
+  ],
+  "action": {
+    "default_title": "Enviar processo ao SIG",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://esaj.tjsp.jus.br/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
