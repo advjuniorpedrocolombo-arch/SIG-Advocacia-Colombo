@@ -29,19 +29,8 @@
       }
     }
 
-    let marca=document.getElementById('sigMarcaTopo');
-    if(!marca){
-      marca=document.createElement('div');
-      marca.id='sigMarcaTopo';
-      marca.style.cssText='position:absolute;left:50%;transform:translateX(-50%);font-size:22px;font-weight:800;letter-spacing:1.4px;color:#173b72;white-space:nowrap;pointer-events:none';
-      top.style.position='relative';
-      top.appendChild(marca);
-
-      const css=document.createElement('style');
-      css.textContent='@media(max-width:900px){#sigMarcaTopo{position:static!important;transform:none!important;width:100%;text-align:center;order:-1;margin-bottom:10px}.top{flex-wrap:wrap!important}}';
-      document.head.appendChild(css);
-    }
-    marca.textContent='SIG - ADVOCACIA COLOMBO';
+    const marcaDuplicada=document.getElementById('sigMarcaTopo');
+    if(marcaDuplicada) marcaDuplicada.remove();
   }
 
   let n=0;
