@@ -75,7 +75,6 @@
     form.onsubmit=async e=>{
       e.preventDefault();
       const btn=form.querySelector('button[type="submit"],button.primary');
-      const textoOriginal=btn?.textContent||'Salvar';
       try{
         const dados=toObj(e.target);
         dados.data_prevista=paraISO(e.target.elements.data_prevista.value);
@@ -107,5 +106,12 @@
   const botaoNova=document.querySelector('#tarefas .toolbar button.primary');
   if(botaoNova){
     botaoNova.addEventListener('click',prepararModalNovaTarefa,true);
+  }
+
+  if(!document.getElementById('sigTarefasSemanalLoader')){
+    const s=document.createElement('script');
+    s.id='sigTarefasSemanalLoader';
+    s.src='tarefas-layout-semanal.js?v=20260913-2100';
+    document.body.appendChild(s);
   }
 })();
