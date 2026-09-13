@@ -8,6 +8,17 @@
     const q=new URLSearchParams({conversationId:'','dadosConsulta.localPesquisa.cdLocal':'-1',cbPesquisa:'NUMPROC','dadosConsulta.tipoNuProcesso':'UNIFICADO',numeroDigitoAnoUnificado:digAno,foroNumeroUnificado:foro,'dadosConsulta.valorConsultaNuUnificado':f,'dadosConsulta.valorConsulta':''});
     return 'https://esaj.tjsp.jus.br/cpopg/search.do?'+q.toString();
   }
+  function urlTRT(numero,tribunalTexto){
+    const n=norm(numero);
+    let numeroTRT=null;
+    if(n.length===20 && n[13]==='5') numeroTRT=Number(n.slice(14,16));
+    if(!numeroTRT){
+      const m=String(tribunalTexto||'').toUpperCase().match(/TRT\s*-?\s*(\d{1,2})/);
+      if(m) numeroTRT=Number(m[1]);
+    }
+    if(!numeroTRT || numeroTRT<1 || numeroTRT>24) return null;
+    return `https://pje.trt${numeroTRT}.jus.br/consultaprocessual/`;
+  }
 
   window.abrirProcessoTribunal=function(ref){
     let p=null;
@@ -19,18 +30,15 @@
 
     const numero=p?.numero_cnj || ref || '';
     const n=norm(numero);
-    const t=String(p?.tribunal||'').toUpperCase().replace(/\s+/g,'');
-    const ramoTribunal=n.length===20?n.slice(13,16):'';
+    const t=String(p?.tribunal||'').toUpperCase();
     let url=null;
 
     if(n.length!==20){alert('Número CNJ inválido.');return;}
-    if(ramoTribunal==='826' || t.includes('TJSP')){
+    if(n.slice(13,16)==='826' || t.includes('TJSP')){
       url=urlTJSP(numero);
-    }else if(ramoTribunal==='515' || t.includes('TRT15')){
-      url='https://pje.trt15.jus.br/consultaprocessual/';
-    }else if(ramoTribunal==='502' || t.includes('TRT2')){
-      url='https://pje.trt2.jus.br/consultaprocessual/';
-    }else if(ramoTribunal==='403' || t.includes('TRF3')){
+    }else if(n[13]==='5' || /TRT\s*-?\s*\d{1,2}/.test(t)){
+      url=urlTRT(numero,t);
+    }else if(n.slice(13,16)==='403' || t.includes('TRF3')){
       url='https://pje1g.trf3.jus.br/pje/ConsultaPublica/listView.seam';
     }
 
