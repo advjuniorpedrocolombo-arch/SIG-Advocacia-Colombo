@@ -2,7 +2,7 @@
   const esperar=()=>{
     if(typeof sb==='undefined'||typeof D==='undefined'||!document.getElementById('menu')){setTimeout(esperar,180);return;}
 
-    function escRD(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+    function escRD(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]))}
     function fmtData(v){if(!v)return '—';const d=new Date(v+'T12:00:00');return d.toLocaleDateString('pt-BR')}
     function processoTitulo(id,cnj){const p=(D.processos||[]).find(x=>x.id===id);return p?.titulo||cnj||'Não vinculado'}
 
@@ -80,6 +80,12 @@
     }
 
     garantirTela();
+    if(!document.getElementById('sigMovimentacoesProcessoLink')){
+      const s=document.createElement('script');
+      s.id='sigMovimentacoesProcessoLink';
+      s.src='movimentacoes-processo-link.js?v=20260913-1435';
+      document.head.appendChild(s);
+    }
   };
   esperar();
 })();
