@@ -22,6 +22,9 @@
           renderProcessosAprimorados();
         }
       };
+      campo.oninput=()=>{
+        if(!String(campo.value||'').trim()) renderProcessosAprimorados();
+      };
       limpar.onclick=()=>{
         campo.value='';
         renderProcessosAprimorados();
