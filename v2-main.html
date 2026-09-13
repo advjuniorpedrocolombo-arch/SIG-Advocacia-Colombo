@@ -18,7 +18,7 @@
     const nova="async function init(){sb=supabase.createClient('https://dmvytzyfzeytfrddyucv.supabase.co','sb_publishable_ds9oZD_c1nMz9MwK-E4bTA_gzh4ubsb');const s=await sb.auth.getSession();if(s.data.session)start(s.data.session.user)}";
     if(!html.includes(antiga)) throw new Error('Trecho de inicialização do SIG não localizado.');
     html=html.replace(antiga,nova);
-    html=html.replace('</body>','<script src="processos-enhancements.js?v=20260912-2115"><\\/script></body>');
+    html=html.replace('</body>','<script src="processos-enhancements.js?v=20260912-2125"><\\/script></body>');
 
     document.open();
     document.write(html);
