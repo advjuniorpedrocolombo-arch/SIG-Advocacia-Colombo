@@ -1,18 +1,32 @@
 {
   "manifest_version": 3,
-  "name": "SIG Advocacia Colombo — Conector e-SAJ",
-  "version": "1.1.1",
-  "description": "Captura processos abertos ou atualiza em lote os processos do e-SAJ usando a sessão autenticada do navegador.",
+  "name": "SIG Advocacia Colombo — Conector Tribunais",
+  "version": "1.2.0",
+  "description": "Integra o SIG ao e-SAJ e ao PJe usando as sessões autenticadas do navegador.",
   "permissions": ["storage", "activeTab", "tabs", "clipboardRead", "clipboardWrite"],
-  "host_permissions": ["https://esaj.tjsp.jus.br/*"],
+  "host_permissions": [
+    "https://esaj.tjsp.jus.br/*",
+    "https://advjuniorpedrocolombo-arch.github.io/*",
+    "https://pje.trt*.jus.br/*"
+  ],
   "action": {
-    "default_title": "SIG — Conector e-SAJ",
+    "default_title": "SIG — Conector Tribunais",
     "default_popup": "popup2.html"
   },
   "content_scripts": [
     {
       "matches": ["https://esaj.tjsp.jus.br/*"],
       "js": ["content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://advjuniorpedrocolombo-arch.github.io/SIG-Advocacia-Colombo/*"],
+      "js": ["sig-pje.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://pje.trt*.jus.br/*"],
+      "js": ["pje-auth.js"],
       "run_at": "document_idle"
     }
   ]
