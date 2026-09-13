@@ -47,15 +47,17 @@
     if(b)setTimeout(()=>b.click(),250);
   }
 
-  async function executar(){
-    const {SIG_PJE_ABRIR}=await chrome.storage.local.get('SIG_PJE_ABRIR');
-    if(!SIG_PJE_ABRIR)return;
-    if(Date.now()-Number(SIG_PJE_ABRIR.criado_em||0)>120000){
-      await chrome.storage.local.remove('SIG_PJE_ABRIR');return;
+  async function executar(forcado=null){
+    let pedido=forcado;
+    if(!pedido){
+      const obj=await chrome.storage.local.get('SIG_PJE_ABRIR');
+      pedido=obj.SIG_PJE_ABRIR;
     }
+    if(!pedido)return;
+    if(Date.now()-Number(pedido.criado_em||Date.now())>120000)return;
     const host=location.hostname.match(/^pje\.trt(\d+)\.jus\.br$/i);
-    if(!host||Number(host[1])!==Number(SIG_PJE_ABRIR.trt))return;
-    const cnj=SIG_PJE_ABRIR.cnj;
+    if(!host||Number(host[1])!==Number(pedido.trt))return;
+    const cnj=pedido.cnj;
 
     let tentativas=0;
     const timer=setInterval(async()=>{
@@ -66,12 +68,23 @@
         return;
       }
       const campo=achaCampo();
-      if(campo && norm(campo.value)!==norm(cnj))disparaBusca(campo,cnj);
+      if(campo){
+        if(norm(campo.value)!==norm(cnj))disparaBusca(campo,cnj);
+      }
       if(tentativas>=35){
         clearInterval(timer);
         console.warn('SIG PJe: não foi possível localizar automaticamente o processo na tela autenticada.');
       }
     },900);
   }
+
+  chrome.runtime.onMessage.addListener((req,_sender,sendResponse)=>{
+    if(req?.type!=='SIG_PJE_EXECUTAR')return;
+    executar({cnj:req.cnj,trt:req.trt,criado_em:Date.now()})
+      .then(()=>sendResponse({ok:true}))
+      .catch(e=>sendResponse({ok:false,error:e?.message||String(e)}));
+    return true;
+  });
+
   executar().catch(e=>console.error('SIG PJe:',e));
 })();
