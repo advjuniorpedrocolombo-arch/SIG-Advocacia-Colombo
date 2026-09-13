@@ -15,6 +15,7 @@ const SUPA_KEY='sb_publishable_ds9oZD_c1nMz9MwK-E4bTA_gzh4ubsb';
 const sb=supabase.createClient(SUPA_URL,SUPA_KEY);const $=x=>document.getElementById(x);
 function norm(v){return String(v||'').replace(/\D/g,'')}
 function fmt(n){n=norm(n);return n.replace(/^(\d{7})(\d{2})(\d{4})(\d)(\d{2})(\d{4})$/,'$1-$2.$3.$4.$5.$6')}
+function clean(s){return String(s||'').replace(/\s+/g,' ').trim()}
 function show(t,ok=false){$('msg').className='msg '+(ok?'ok':'err');$('msg').textContent=t}
 function parseData(s){const m=String(s||'').match(/(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}))?/);if(!m)return new Date().toISOString();return new Date(Number(m[3]),Number(m[2])-1,Number(m[1]),Number(m[4]||12),Number(m[5]||0)).toISOString()}
 async function sessao(){const {data}=await sb.auth.getSession();if(data.session){$('sessao').textContent='SIG conectado: '+data.session.user.email;return data.session.user} $('sessao').textContent='Você não está conectado ao SIG nesta aba. Abra o SIG, faça login e volte aqui.';return null}
@@ -25,9 +26,9 @@ $('ler').onclick=async()=>{
     const user=await sessao();if(!user)throw new Error('Faça login no SIG primeiro e depois retorne ao importador.');
     const raw=await navigator.clipboard.readText();if(!raw)throw new Error('Não há dados copiados. Volte ao e-SAJ e use a extensão “SIG — Conector e-SAJ”.');
     const p=JSON.parse(raw);if(!p.numero_cnj)throw new Error('Os dados copiados não parecem vir do conector e-SAJ.');
-    const numero=fmt(p.numero_cnj);$('preview').style.display='block';$('preview').textContent=[numero,p.classe,p.assunto,p.vara,`${(p.movimentos||[]).length} movimentação(ões) capturada(s)`].filter(Boolean).join('\n');
+    const numero=fmt(p.numero_cnj);$('preview').style.display='block';$('preview').textContent=[numero,p.classe,p.assunto,p.vara,p.cliente_representado&&('Meu cliente: '+p.cliente_representado),`${(p.movimentos||[]).length} movimentação(ões) capturada(s)`].filter(Boolean).join('\n');
     let {data:proc,error}=await sb.from('processos').select('id,user_id,numero_cnj,titulo').eq('numero_cnj',numero).limit(1);if(error)throw error;
-    if(!proc?.length){const {data:novo,error:e2}=await sb.from('processos').insert({user_id:user.id,numero_cnj:numero,titulo:p.classe?`${p.classe} — ${numero}`:`Processo ${numero}`,tribunal:'TJSP',comarca:p.foro||null,vara:p.vara||null,status:'ativo',monitorar_datajud:true,datajud_status:'Importado do e-SAJ'}).select('id,user_id,numero_cnj,titulo').single();if(e2)throw e2;proc=[novo]}
+    if(!proc?.length){const {data:novo,error:e2}=await sb.from('processos').insert({user_id:user.id,numero_cnj:numero,titulo:p.classe?`${p.classe} — ${numero}`:`Processo ${numero}`,tribunal:'TJSP',comarca:p.foro||null,vara:p.vara||null,partes:clean(p.cliente_representado)||clean(p.partes)||null,status:'ativo',monitorar_datajud:true,datajud_status:'Importado do e-SAJ'}).select('id,user_id,numero_cnj,titulo').single();if(e2)throw e2;proc=[novo]}
     const processo=proc[0];
     const {data:existentes,error:e3}=await sb.from('movimentacoes').select('descricao').eq('processo_id',processo.id).limit(1000);if(e3)throw e3;
     const setExist=new Set((existentes||[]).map(x=>String(x.descricao||'').trim()));
@@ -35,7 +36,10 @@ $('ler').onclick=async()=>{
     if(novos.length){const rows=novos.map(m=>({user_id:user.id,processo_id:processo.id,data_movimentacao:parseData(m.data),descricao:m.descricao,origem:'e-SAJ (sessão local)',nova:true,analisada:false}));const {error:e4}=await sb.from('movimentacoes').insert(rows);if(e4)throw e4}
     const detalhes=[p.classe&&('Classe: '+p.classe),p.assunto&&('Assunto: '+p.assunto),p.foro&&('Foro: '+p.foro),p.vara&&('Vara: '+p.vara),p.juiz&&('Juiz: '+p.juiz),p.partes&&('Partes: '+p.partes)].filter(Boolean).join(' | ');
     if(detalhes&&!setExist.has(detalhes)){await sb.from('movimentacoes').insert({user_id:user.id,processo_id:processo.id,data_movimentacao:new Date().toISOString(),descricao:detalhes,origem:'e-SAJ — dados processuais',nova:true,analisada:false})}
-    await sb.from('processos').update({datajud_status:'Importado do e-SAJ',tribunal:'TJSP',comarca:p.foro||null,vara:p.vara||null}).eq('id',processo.id);
+    const atualizacao={datajud_status:'Importado do e-SAJ',tribunal:'TJSP',comarca:p.foro||null,vara:p.vara||null};
+    const meuCliente=clean(p.cliente_representado)||clean(p.partes);
+    if(meuCliente)atualizacao.partes=meuCliente;
+    await sb.from('processos').update(atualizacao).eq('id',processo.id);
     show(`Processo ${numero} importado. ${novos.length} nova(s) movimentação(ões) adicionada(s).`,true);
   }catch(e){show(e.message||String(e))}finally{$('ler').disabled=false}
 };
