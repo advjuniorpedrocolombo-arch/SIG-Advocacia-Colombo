@@ -114,4 +114,11 @@
     s.src='tarefas-layout-semanal.js?v=20260913-2210';
     document.body.appendChild(s);
   }
+
+  if(!document.getElementById('sigTarefasPrioridadeLoader')){
+    const s=document.createElement('script');
+    s.id='sigTarefasPrioridadeLoader';
+    s.src='tarefas-prioridade.js?v=20260913-2245';
+    document.body.appendChild(s);
+  }
 })();
