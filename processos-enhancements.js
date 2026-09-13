@@ -47,7 +47,7 @@
       if(!sec)return;
 
       const th=sec.querySelector('thead tr');
-      if(th)th.innerHTML='<th>Número</th><th>Cliente</th><th>Área</th><th>Comarca</th><th>Vara</th><th>Tribunal</th><th>Status</th><th>Consulta</th><th>Ação</th>';
+      if(th)th.innerHTML='<th>Número</th><th>Meu cliente</th><th>Área</th><th>Comarca</th><th>Vara</th><th>Tribunal</th><th>Status</th><th>Consulta</th><th>Ação</th>';
       const table=sec.querySelector('table');
       if(table)table.style.minWidth='1550px';
 
