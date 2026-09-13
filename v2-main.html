@@ -18,7 +18,46 @@
     const nova="async function init(){sb=supabase.createClient('https://dmvytzyfzeytfrddyucv.supabase.co','sb_publishable_ds9oZD_c1nMz9MwK-E4bTA_gzh4ubsb');const s=await sb.auth.getSession();if(s.data.session)start(s.data.session.user)}";
     if(!html.includes(antiga)) throw new Error('Trecho de inicialização do SIG não localizado.');
     html=html.replace(antiga,nova);
-    html=html.replace('</body>','<script src="processos-enhancements.js?v=20260912-2125"><\\/script></body>');
+
+    const alvo='</div></div><div class="table"><table><thead><tr><th>Número</th><th>Título</th><th>Área</th><th>Tribunal</th><th>Status</th><th>Consulta</th><th>Ação</th></tr></thead><tbody id="tbProcessos"></tbody></table></div></section>';
+    const novo='</div></div><div id="buscaProcessoBox" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0 14px"><input id="buscaProcesso" type="search" placeholder="Digite o número do processo" style="width:min(380px,100%);margin:0"><button type="button" class="primary" id="btnBuscarProcesso">Buscar processo</button><button type="button" class="secondary" id="btnLimparBuscaProcesso">Limpar</button><span id="resultadoBuscaProcesso" class="small"></span></div><div class="table"><table><thead><tr><th>Número</th><th>Título</th><th>Área</th><th>Tribunal</th><th>Status</th><th>Consulta</th><th>Ação</th></tr></thead><tbody id="tbProcessos"></tbody></table></div></section>';
+    if(html.includes(alvo)) html=html.replace(alvo,novo);
+
+    const buscaScript=`<script>
+    (function(){
+      function filtrarProcessos(){
+        const campo=document.getElementById('buscaProcesso');
+        const tbody=document.getElementById('tbProcessos');
+        const saida=document.getElementById('resultadoBuscaProcesso');
+        if(!campo||!tbody)return;
+        const termo=String(campo.value||'').replace(/\\D/g,'');
+        let visiveis=0,total=0;
+        [...tbody.querySelectorAll('tr')].forEach(tr=>{
+          total++;
+          const numero=String(tr.cells[0]?.textContent||'').replace(/\\D/g,'');
+          const ok=!termo||numero.includes(termo);
+          tr.style.display=ok?'':'none';
+          if(ok)visiveis++;
+        });
+        if(saida)saida.textContent=termo?(visiveis+' processo(s) encontrado(s)'):(total+' processo(s)');
+      }
+      function iniciarBusca(){
+        const campo=document.getElementById('buscaProcesso');
+        const btn=document.getElementById('btnBuscarProcesso');
+        const limpar=document.getElementById('btnLimparBuscaProcesso');
+        if(!campo||!btn||!limpar){setTimeout(iniciarBusca,200);return;}
+        btn.onclick=filtrarProcessos;
+        campo.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();filtrarProcessos();}});
+        limpar.onclick=()=>{campo.value='';filtrarProcessos();campo.focus();};
+        const tbody=document.getElementById('tbProcessos');
+        if(tbody)new MutationObserver(filtrarProcessos).observe(tbody,{childList:true});
+        filtrarProcessos();
+      }
+      iniciarBusca();
+    })();
+    <\\/script>`;
+
+    html=html.replace('</body>',buscaScript+'<script src="processos-enhancements.js?v=20260912-2135"><\\/script></body>');
 
     document.open();
     document.write(html);
