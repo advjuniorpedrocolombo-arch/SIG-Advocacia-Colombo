@@ -2,42 +2,46 @@
   let semanaBase=inicioSemana(new Date());
 
   const css=`
-  #tarefas.sig-weekly .toolbar{align-items:center;margin-bottom:14px}
+  #tarefas.sig-weekly{min-width:0;overflow-x:hidden}
+  #tarefas.sig-weekly .toolbar{align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap}
   #tarefas.sig-weekly .table{display:none!important}
-  #tarefas.sig-weekly .sig-week-wrap{display:block}
-  #tarefas.sig-weekly .sig-week-top{display:flex;justify-content:space-between;align-items:center;gap:14px;background:linear-gradient(135deg,#102c55,#173b72);color:#fff;border-radius:20px;padding:18px 20px;margin:8px 0 14px;box-shadow:0 10px 28px rgba(16,44,85,.14)}
-  #tarefas.sig-weekly .sig-week-title{font-family:Georgia,serif;font-size:26px;font-weight:700;margin:0}
-  #tarefas.sig-weekly .sig-week-sub{font-size:12px;color:#d8e4f3;margin-top:4px}
-  #tarefas.sig-weekly .sig-week-nav{display:flex;gap:8px;flex-wrap:wrap}
-  #tarefas.sig-weekly .sig-week-nav button{background:#fff;color:#173b72;padding:8px 11px;border-radius:10px;font-weight:700}
-  #tarefas.sig-weekly .sig-week-stats{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
-  #tarefas.sig-weekly .sig-stat{background:#fff;border:1px solid #e1e8f0;border-radius:14px;padding:10px 14px;min-width:130px;box-shadow:0 4px 14px rgba(16,44,85,.04)}
-  #tarefas.sig-weekly .sig-stat b{display:block;font-size:22px;color:#102c55}
-  #tarefas.sig-weekly .sig-stat span{font-size:11px;color:#73849a}
-  #tarefas.sig-weekly .sig-week-days{display:grid;grid-template-columns:repeat(7,minmax(150px,1fr));gap:10px;overflow-x:auto;padding-bottom:4px}
-  #tarefas.sig-weekly .sig-day{min-width:150px;background:#f8fbff;border:1px solid #dfe8f2;border-radius:16px;padding:10px;min-height:240px}
+  #tarefas.sig-weekly .sig-week-wrap{display:block;min-width:0;width:100%;max-width:100%;overflow:hidden}
+  #tarefas.sig-weekly .sig-week-top{display:flex;justify-content:space-between;align-items:center;gap:12px;background:linear-gradient(135deg,#102c55,#173b72);color:#fff;border-radius:18px;padding:14px 16px;margin:6px 0 12px;box-shadow:0 8px 22px rgba(16,44,85,.13)}
+  #tarefas.sig-weekly .sig-week-title{font-family:Georgia,serif;font-size:22px;font-weight:700;margin:0}
+  #tarefas.sig-weekly .sig-week-sub{font-size:11px;color:#d8e4f3;margin-top:3px}
+  #tarefas.sig-weekly .sig-week-nav{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  #tarefas.sig-weekly .sig-week-nav button{background:#fff;color:#173b72;padding:7px 9px;border-radius:9px;font-size:11px;font-weight:700;white-space:nowrap}
+  #tarefas.sig-weekly .sig-week-stats{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+  #tarefas.sig-weekly .sig-stat{background:#fff;border:1px solid #e1e8f0;border-radius:12px;padding:8px 12px;min-width:108px;box-shadow:0 3px 10px rgba(16,44,85,.04)}
+  #tarefas.sig-weekly .sig-stat b{display:block;font-size:19px;color:#102c55}
+  #tarefas.sig-weekly .sig-stat span{font-size:10px;color:#73849a}
+  #tarefas.sig-weekly .sig-week-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;width:100%;max-width:100%;overflow:visible;padding-bottom:2px}
+  #tarefas.sig-weekly .sig-day{min-width:0;width:100%;background:#f8fbff;border:1px solid #dfe8f2;border-radius:13px;padding:7px;min-height:205px;overflow:hidden}
   #tarefas.sig-weekly .sig-day.today{border:2px solid #2f6fb7;background:#f3f8ff}
-  #tarefas.sig-weekly .sig-day-head{text-align:center;padding:4px 2px 10px;border-bottom:1px solid #dfe8f2;margin-bottom:10px}
-  #tarefas.sig-weekly .sig-day-name{font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#173b72}
-  #tarefas.sig-weekly .sig-day-date{font-family:Georgia,serif;font-size:27px;font-weight:700;color:#102c55;line-height:1.1}
-  #tarefas.sig-weekly .sig-day-month{font-size:10px;color:#75869a;text-transform:uppercase}
-  #tarefas.sig-weekly .sig-task-card{position:relative;background:#fff;border:1px solid #e3eaf2;border-radius:12px;padding:10px 9px 9px 36px;margin-bottom:8px;box-shadow:0 4px 12px rgba(16,44,85,.05);cursor:pointer;transition:.15s ease}
-  #tarefas.sig-weekly .sig-task-card:hover{transform:translateY(-1px);box-shadow:0 7px 16px rgba(16,44,85,.09)}
+  #tarefas.sig-weekly .sig-day-head{text-align:center;padding:2px 1px 7px;border-bottom:1px solid #dfe8f2;margin-bottom:7px}
+  #tarefas.sig-weekly .sig-day-name{font-size:9px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:#173b72;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #tarefas.sig-weekly .sig-day-date{font-family:Georgia,serif;font-size:22px;font-weight:700;color:#102c55;line-height:1.05}
+  #tarefas.sig-weekly .sig-day-month{font-size:8px;color:#75869a;text-transform:uppercase;white-space:nowrap}
+  #tarefas.sig-weekly .sig-task-card{position:relative;background:#fff;border:1px solid #e3eaf2;border-radius:10px;padding:8px 6px 7px 29px;margin-bottom:6px;box-shadow:0 3px 9px rgba(16,44,85,.05);cursor:pointer;transition:.15s ease;min-width:0;overflow:hidden}
+  #tarefas.sig-weekly .sig-task-card:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgba(16,44,85,.09)}
   #tarefas.sig-weekly .sig-task-card.done{opacity:.62}
-  #tarefas.sig-weekly .sig-task-check{position:absolute;left:9px;top:10px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:#eaf4ff;color:#173b72;font-size:12px;font-weight:900;border:1px solid #c9d9ec}
+  #tarefas.sig-weekly .sig-task-check{position:absolute;left:6px;top:8px;width:17px;height:17px;border-radius:50%;display:grid;place-items:center;background:#eaf4ff;color:#173b72;font-size:10px;font-weight:900;border:1px solid #c9d9ec;padding:0}
   #tarefas.sig-weekly .sig-task-card.done .sig-task-check{background:#dff5ea;color:#087a4b;border-color:#bde8d2}
-  #tarefas.sig-weekly .sig-task-title{font-size:12px;font-weight:700;color:#172033;line-height:1.25;margin-right:2px}
-  #tarefas.sig-weekly .sig-task-time{font-size:10px;color:#60758d;margin-top:5px}
-  #tarefas.sig-weekly .sig-task-prio{display:inline-block;margin-top:6px;padding:3px 6px;border-radius:999px;font-size:9px;font-weight:800;text-transform:uppercase;background:#eef3fb;color:#173b72}
+  #tarefas.sig-weekly .sig-task-title{font-size:10px;font-weight:700;color:#172033;line-height:1.2;overflow-wrap:anywhere}
+  #tarefas.sig-weekly .sig-task-time{font-size:8.5px;color:#60758d;margin-top:4px;overflow-wrap:anywhere}
+  #tarefas.sig-weekly .sig-task-prio{display:inline-block;margin-top:5px;padding:2px 5px;border-radius:999px;font-size:7.5px;font-weight:800;text-transform:uppercase;background:#eef3fb;color:#173b72}
   #tarefas.sig-weekly .sig-task-prio.urgente{background:#fee4e2;color:#b42318}
   #tarefas.sig-weekly .sig-task-prio.alta{background:#fff1dc;color:#b54708}
-  #tarefas.sig-weekly .sig-task-actions{display:flex;gap:5px;margin-top:7px}
-  #tarefas.sig-weekly .sig-task-actions button{padding:5px 7px;border-radius:7px;font-size:10px}
-  #tarefas.sig-weekly .sig-empty{text-align:center;color:#a0adbb;font-size:11px;padding:28px 4px}
-  #tarefas.sig-weekly .sig-week-foot{margin-top:14px;background:#fff;border:1px solid #e1e8f0;border-radius:14px;padding:10px 14px;color:#6b7d92;font-size:12px;display:flex;justify-content:space-between;gap:10px;align-items:center}
-  #tarefas.sig-weekly .sig-progress{height:6px;background:#edf2f7;border-radius:999px;overflow:hidden;flex:1;max-width:320px}
+  #tarefas.sig-weekly .sig-task-actions{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap}
+  #tarefas.sig-weekly .sig-task-actions button{padding:4px 5px;border-radius:6px;font-size:8px;white-space:nowrap}
+  #tarefas.sig-weekly .sig-empty{text-align:center;color:#a0adbb;font-size:9px;padding:22px 2px}
+  #tarefas.sig-weekly .sig-week-foot{margin-top:12px;background:#fff;border:1px solid #e1e8f0;border-radius:12px;padding:8px 12px;color:#6b7d92;font-size:11px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+  #tarefas.sig-weekly .sig-progress{height:5px;background:#edf2f7;border-radius:999px;overflow:hidden;flex:1;max-width:280px}
   #tarefas.sig-weekly .sig-progress > i{display:block;height:100%;background:#173b72;border-radius:999px}
-  @media(max-width:900px){#tarefas.sig-weekly .sig-week-days{grid-template-columns:repeat(7,190px)}#tarefas.sig-weekly .sig-week-top{align-items:flex-start;flex-direction:column}}
+  @media(max-width:1180px){#tarefas.sig-weekly .sig-week-days{grid-template-columns:repeat(4,minmax(0,1fr))}}
+  @media(max-width:900px){#tarefas.sig-weekly .sig-week-days{grid-template-columns:repeat(3,minmax(0,1fr))}#tarefas.sig-weekly .sig-week-top{align-items:flex-start;flex-direction:column}.main{min-width:0}}
+  @media(max-width:650px){#tarefas.sig-weekly .sig-week-days{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media(max-width:430px){#tarefas.sig-weekly .sig-week-days{grid-template-columns:1fr}}
   `;
 
   function inicioSemana(d){
