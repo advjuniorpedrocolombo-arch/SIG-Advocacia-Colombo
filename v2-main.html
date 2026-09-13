@@ -23,7 +23,7 @@
     const novo='</div></div><div id="buscaProcessoBox" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0 14px"><input id="buscaProcesso" type="search" placeholder="Digite o número do processo" style="width:min(380px,100%);margin:0"><button type="button" class="primary" id="btnBuscarProcesso">Buscar processo</button><button type="button" class="secondary" id="btnLimparBuscaProcesso">Limpar</button><span id="resultadoBuscaProcesso" class="small"></span></div><div class="table"><table><thead><tr><th>Número</th><th>Título</th><th>Área</th><th>Tribunal</th><th>Status</th><th>Consulta</th><th>Ação</th></tr></thead><tbody id="tbProcessos"></tbody></table></div></section>';
     if(html.includes(alvo)) html=html.replace(alvo,novo);
 
-    html=html.replace('</body>','<script src="processos-busca.js?v=20260912-2225"><\/script><script src="processos-enhancements.js?v=20260912-2310"><\/script><script src="processos-tribunal-link.js?v=20260913-1300"><\/script><script src="agenda-enhancements.js?v=20260913-1105"><\/script><script src="trabalhista-importador.js?v=20260913-1205"><\/script></body>');
+    html=html.replace('</body>','<script src="processos-busca.js?v=20260912-2225"><\/script><script src="processos-enhancements.js?v=20260912-2310"><\/script><script src="processos-tribunal-link.js?v=20260913-1300"><\/script><script src="processos-link-pje.js?v=20260913-1355"><\/script><script src="agenda-enhancements.js?v=20260913-1105"><\/script><script src="trabalhista-importador.js?v=20260913-1205"><\/script></body>');
 
     document.open();
     document.write(html);
