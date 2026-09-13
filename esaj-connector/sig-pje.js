@@ -28,13 +28,11 @@
     e.stopImmediatePropagation();
 
     try{
-      await chrome.storage.local.set({
-        SIG_PJE_ABRIR:{cnj:d.cnj,trt:d.trt,criado_em:Date.now()}
-      });
-      window.open(`https://pje.trt${d.trt}.jus.br/primeirograu/`,'_blank','noopener');
+      const resp=await chrome.runtime.sendMessage({type:'SIG_PJE_ABRIR_PROCESSO',cnj:d.cnj,trt:d.trt});
+      if(!resp?.ok)throw new Error(resp?.error||'Falha ao acionar o conector do PJe.');
     }catch(err){
       console.error('SIG PJe:',err);
-      alert('Não foi possível acionar o conector do PJe. Recarregue a extensão SIG — Conector Tribunais no Chrome.');
+      alert('Não foi possível usar a sessão autenticada do PJe. Recarregue a extensão SIG — Conector Tribunais no Chrome.');
     }
   },true);
 })();
