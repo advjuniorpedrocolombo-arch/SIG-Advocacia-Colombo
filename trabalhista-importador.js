@@ -12,8 +12,18 @@
     }
     function varaCodigo(n){n=norm(n);return n.length===20?n.slice(-4):null}
     function extrairNumeros(txt){
-      const achados=[...String(txt||'').matchAll(/\d[\d.\-\s]{15,30}\d/g)].map(m=>norm(m[0])).filter(n=>n.length===20&&n[13]==='5');
-      return [...new Set(achados)];
+      const texto=String(txt||'');
+      const candidatos=[];
+      const re=/\b\d{7}\s*[-.]?\s*\d{2}\s*[.]?\s*\d{4}\s*[.]?\s*5\s*[.]?\s*\d{2}\s*[.]?\s*\d{4}\b/g;
+      for(const m of texto.matchAll(re)){
+        const n=norm(m[0]);
+        if(n.length===20&&n[13]==='5')candidatos.push(n);
+      }
+      for(const linha of texto.split(/\r?\n/)){
+        const n=norm(linha);
+        if(n.length===20&&n[13]==='5')candidatos.push(n);
+      }
+      return [...new Set(candidatos)];
     }
     function existentes(){return new Set((D.processos||[]).map(p=>norm(p.numero_cnj)).filter(Boolean))}
 
