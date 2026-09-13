@@ -1,6 +1,13 @@
 (()=>{
   let tarefaEditandoId=null;
 
+  function paraISO(valor){
+    if(!valor) return null;
+    const d=new Date(valor);
+    if(Number.isNaN(d.getTime())) throw new Error('Data ou horário inválido.');
+    return d.toISOString();
+  }
+
   function paraDatetimeLocal(valor){
     if(!valor) return '';
     const d=new Date(valor);
@@ -67,24 +74,33 @@
   if(form){
     form.onsubmit=async e=>{
       e.preventDefault();
-      if(!tarefaEditandoId){
-        await ins('tarefas',e.target,'mTarefa');
-        prepararModalNovaTarefa();
-        return;
+      const btn=form.querySelector('button[type="submit"],button.primary');
+      const textoOriginal=btn?.textContent||'Salvar';
+      try{
+        const dados=toObj(e.target);
+        dados.data_prevista=paraISO(e.target.elements.data_prevista.value);
+        if(btn){btn.disabled=true;btn.textContent='Salvando...';}
+
+        if(!tarefaEditandoId){
+          const payload={...dados,user_id:U.id};
+          const {error}=await sb.from('tarefas').insert(payload);
+          if(error) throw error;
+        }else{
+          const {error}=await sb.from('tarefas').update(dados).eq('id',tarefaEditandoId);
+          if(error) throw error;
+        }
+
+        e.target.reset();
+        closeM('mTarefa');
+        tarefaEditandoId=null;
+        const titulo=document.querySelector('#mTarefa h3');
+        if(titulo) titulo.textContent='Nova tarefa';
+        await load();
+      }catch(err){
+        alert('Não foi possível salvar a tarefa: '+(err?.message||err));
+      }finally{
+        if(btn){btn.disabled=false;btn.textContent=tarefaEditandoId?'Salvar alterações':'Salvar';}
       }
-
-      const dados=toObj(e.target);
-      const {error}=await sb.from('tarefas').update(dados).eq('id',tarefaEditandoId);
-      if(error) return alert('Falha ao editar tarefa: '+error.message);
-
-      e.target.reset();
-      closeM('mTarefa');
-      tarefaEditandoId=null;
-      const titulo=document.querySelector('#mTarefa h3');
-      if(titulo) titulo.textContent='Nova tarefa';
-      const salvar=e.target.querySelector('button[type="submit"],button.primary');
-      if(salvar) salvar.textContent='Salvar';
-      await load();
     };
   }
 
