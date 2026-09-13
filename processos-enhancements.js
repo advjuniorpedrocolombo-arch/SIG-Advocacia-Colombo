@@ -9,9 +9,30 @@
       return vinculado?.nome || p.partes || '—';
     }
 
+    function ligarBusca(){
+      const campo=document.getElementById('buscaProcesso');
+      const btn=document.getElementById('btnBuscarProcesso');
+      const limpar=document.getElementById('btnLimparBuscaProcesso') || document.getElementById('limparBuscaProcesso');
+      if(!campo||!btn||!limpar)return;
+
+      btn.onclick=()=>renderProcessosAprimorados();
+      campo.onkeydown=e=>{
+        if(e.key==='Enter'){
+          e.preventDefault();
+          renderProcessosAprimorados();
+        }
+      };
+      limpar.onclick=()=>{
+        campo.value='';
+        renderProcessosAprimorados();
+        campo.focus();
+      };
+    }
+
     function prepararTelaProcessos(){
       const sec=document.getElementById('processos');
       if(!sec)return;
+
       const th=sec.querySelector('thead tr');
       if(th)th.innerHTML='<th>Número</th><th>Cliente</th><th>Área</th><th>Comarca</th><th>Vara</th><th>Tribunal</th><th>Status</th><th>Consulta</th><th>Ação</th>';
       const table=sec.querySelector('table');
@@ -21,19 +42,21 @@
         const toolbar=sec.querySelector('.toolbar');
         const box=document.createElement('div');
         box.style.cssText='display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0 14px';
-        box.innerHTML='<input id="buscaProcesso" type="search" placeholder="Digite o número do processo" style="width:min(360px,100%);margin:0"><button type="button" class="primary" id="btnBuscarProcesso">Buscar processo</button><button type="button" class="secondary" id="limparBuscaProcesso">Limpar</button><span id="contagemProcessos" class="small"></span>';
+        box.innerHTML='<input id="buscaProcesso" type="search" placeholder="Digite o número do processo" style="width:min(360px,100%);margin:0"><button type="button" class="primary" id="btnBuscarProcesso">Buscar processo</button><button type="button" class="secondary" id="btnLimparBuscaProcesso">Limpar</button><span id="resultadoBuscaProcesso" class="small"></span>';
         toolbar.insertAdjacentElement('afterend',box);
-        document.getElementById('btnBuscarProcesso').onclick=renderProcessosAprimorados;
-        document.getElementById('buscaProcesso').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();renderProcessosAprimorados();}});
-        document.getElementById('limparBuscaProcesso').onclick=()=>{document.getElementById('buscaProcesso').value='';renderProcessosAprimorados();};
       }
+
+      ligarBusca();
     }
 
     window.renderProcessosAprimorados=function(){
       const tb=document.getElementById('tbProcessos');
       if(!tb)return;
-      const busca=(document.getElementById('buscaProcesso')?.value||'').replace(/\D/g,'');
+
+      const campo=document.getElementById('buscaProcesso');
+      const busca=String(campo?.value||'').replace(/\D/g,'');
       const lista=(D.processos||[]).filter(p=>!busca||String(p.numero_cnj||'').replace(/\D/g,'').includes(busca));
+
       tb.innerHTML=lista.map(p=>`<tr>
         <td>${esc(p.numero_cnj||'')}</td>
         <td>${esc(clienteDoProcesso(p))}</td>
@@ -45,8 +68,13 @@
         <td>${datajudLabel(p)}</td>
         <td style="white-space:nowrap">${acaoProcesso(p)} <button type="button" class="secondary" style="color:#b42318;margin-left:6px" onclick="excluirProcessoSIG('${p.id}','${String(p.numero_cnj||'').replace(/'/g,'')}')">Excluir</button></td>
       </tr>`).join('');
-      const c=document.getElementById('contagemProcessos');
-      if(c)c.textContent=lista.length+' de '+(D.processos||[]).length+' processo(s)';
+
+      const saida=document.getElementById('resultadoBuscaProcesso') || document.getElementById('contagemProcessos');
+      if(saida){
+        saida.textContent=busca
+          ? (lista.length ? lista.length+' processo(s) encontrado(s)' : 'Processo não encontrado')
+          : (D.processos||[]).length+' processo(s)';
+      }
     };
 
     window.excluirProcessoSIG=async function(id,numero){
