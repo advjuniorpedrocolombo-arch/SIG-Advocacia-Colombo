@@ -1,8 +1,6 @@
 (()=>{
   let semanaBase=inicioSemana(new Date());
-  let arrastandoId=null;
-
-  const PESO_PRIORIDADE={urgente:0,alta:1,normal:2,baixa:3};
+  let arrastando=null;
 
   const css=`
   #tarefas.sig-weekly{min-width:0;overflow-x:hidden}
@@ -18,9 +16,8 @@
   #tarefas.sig-weekly .sig-stat b{display:block;font-size:19px;color:#102c55}
   #tarefas.sig-weekly .sig-stat span{font-size:10px;color:#73849a}
   #tarefas.sig-weekly .sig-checklist{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
-  #tarefas.sig-weekly .sig-day-list{background:#fff;border:1px solid #e1e8f0;border-radius:15px;overflow:hidden;box-shadow:0 4px 14px rgba(16,44,85,.04);transition:.15s ease}
+  #tarefas.sig-weekly .sig-day-list{background:#fff;border:1px solid #e1e8f0;border-radius:15px;overflow:hidden;box-shadow:0 4px 14px rgba(16,44,85,.04)}
   #tarefas.sig-weekly .sig-day-list.today{border:2px solid #2f6fb7}
-  #tarefas.sig-weekly .sig-day-list.drag-over{border:2px dashed #2f6fb7;background:#f3f8ff}
   #tarefas.sig-weekly .sig-day-list-head{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#f4f8fd;padding:10px 12px;border-bottom:1px solid #e4ebf3}
   #tarefas.sig-weekly .sig-day-label{display:flex;align-items:baseline;gap:8px;color:#102c55}
   #tarefas.sig-weekly .sig-day-label strong{font-family:Georgia,serif;font-size:18px}
@@ -29,9 +26,12 @@
   #tarefas.sig-weekly .sig-day-count{font-size:10px;font-weight:700;color:#173b72;background:#eaf2fb;border-radius:999px;padding:4px 7px}
   #tarefas.sig-weekly .sig-add-day{width:26px;height:26px;border-radius:8px;border:1px solid #cbd9ea;background:#fff;color:#173b72;font-size:18px;line-height:1;padding:0;cursor:pointer;font-weight:800}
   #tarefas.sig-weekly .sig-day-body{padding:8px 10px;min-height:64px}
-  #tarefas.sig-weekly .sig-check-row{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:9px;align-items:center;padding:9px 4px;border-bottom:1px solid #edf1f5;cursor:grab}
+  #tarefas.sig-weekly .sig-day-body.drag-zone{background:#f7fbff}
+  #tarefas.sig-weekly .sig-check-row{display:grid;grid-template-columns:26px 30px minmax(0,1fr) auto;gap:8px;align-items:center;padding:9px 4px;border-bottom:1px solid #edf1f5}
   #tarefas.sig-weekly .sig-check-row:last-child{border-bottom:0}
-  #tarefas.sig-weekly .sig-check-row.dragging{opacity:.38}
+  #tarefas.sig-weekly .sig-check-row.dragging{opacity:.35;background:#edf5ff}
+  #tarefas.sig-weekly .sig-drag-handle{font-size:16px;color:#8a9aaf;cursor:grab;user-select:none;text-align:center;line-height:1}
+  #tarefas.sig-weekly .sig-drag-handle:active{cursor:grabbing}
   #tarefas.sig-weekly .sig-check-row.done{opacity:.58}
   #tarefas.sig-weekly .sig-box{width:22px;height:22px;border:2px solid #6d86a5;border-radius:5px;background:#fff;display:grid;place-items:center;color:#fff;font-size:14px;font-weight:900;padding:0;cursor:pointer}
   #tarefas.sig-weekly .sig-check-row.done .sig-box{background:#173b72;border-color:#173b72}
@@ -49,7 +49,7 @@
   #tarefas.sig-weekly .sig-progress{height:5px;background:#edf2f7;border-radius:999px;overflow:hidden;flex:1;max-width:280px}
   #tarefas.sig-weekly .sig-progress>i{display:block;height:100%;background:#173b72;border-radius:999px}
   @media(max-width:920px){#tarefas.sig-weekly .sig-checklist{grid-template-columns:1fr}#tarefas.sig-weekly .sig-week-top{align-items:flex-start;flex-direction:column}}
-  @media(max-width:520px){#tarefas.sig-weekly .sig-check-row{grid-template-columns:28px minmax(0,1fr)}#tarefas.sig-weekly .sig-check-actions{grid-column:2}}
+  @media(max-width:520px){#tarefas.sig-weekly .sig-check-row{grid-template-columns:22px 28px minmax(0,1fr)}#tarefas.sig-weekly .sig-check-actions{grid-column:3}}
   `;
 
   function inicioSemana(d){const x=new Date(d);x.setHours(0,0,0,0);const dia=x.getDay();x.setDate(x.getDate()+(dia===0?-6:1-dia));return x}
@@ -60,13 +60,15 @@
   function fmtData(d){return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})}
   function hora(v){return v?new Date(v).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):''}
   function pad(n){return String(n).padStart(2,'0')}
-  function pesoPrioridade(p){return PESO_PRIORIDADE[String(p||'normal').toLowerCase()] ?? 2}
-  function ordenarDia(lista){
+  function ordemKey(chave){return `sig-tarefas-ordem:${chave}`}
+  function lerOrdem(chave){try{return JSON.parse(localStorage.getItem(ordemKey(chave))||'[]').map(String)}catch(_){return []}}
+  function salvarOrdem(chave,ids){localStorage.setItem(ordemKey(chave),JSON.stringify(ids.map(String)))}
+  function ordenarManual(lista,chave){
+    const ordem=lerOrdem(chave);
+    const pos=new Map(ordem.map((id,i)=>[id,i]));
     return [...lista].sort((a,b)=>{
-      const concluidaA=a.status==='concluida'?1:0;
-      const concluidaB=b.status==='concluida'?1:0;
-      if(concluidaA!==concluidaB)return concluidaA-concluidaB;
-      const pa=pesoPrioridade(a.prioridade),pb=pesoPrioridade(b.prioridade);
+      const pa=pos.has(String(a.id))?pos.get(String(a.id)):99999;
+      const pb=pos.has(String(b.id))?pos.get(String(b.id)):99999;
       if(pa!==pb)return pa-pb;
       return new Date(a.data_prevista)-new Date(b.data_prevista);
     });
@@ -89,25 +91,37 @@
     setTimeout(()=>{const agora=new Date();if(form.elements.data_prevista)form.elements.data_prevista.value=`${chave}T${pad(agora.getHours())}:${pad(agora.getMinutes())}`;openM('mTarefa')},0);
   }
 
-  async function moverTarefa(id,chaveDestino){
-    const t=(D.tarefas||[]).find(x=>String(x.id)===String(id));if(!t||!t.data_prevista)return;
-    const antiga=new Date(t.data_prevista);const [a,m,d]=chaveDestino.split('-').map(Number);
-    const nova=new Date(a,m-1,d,antiga.getHours(),antiga.getMinutes(),antiga.getSeconds(),antiga.getMilliseconds());
-    if(mesmoDia(antiga,nova))return;
-    const {error}=await sb.from('tarefas').update({data_prevista:nova.toISOString()}).eq('id',id);
-    if(error)return alert('Não foi possível mover a tarefa: '+error.message);
-    await load();renderSemanal();
-  }
-
-  function ativarDnD(wrap){
+  function ativarOrdemManual(wrap){
     wrap.querySelectorAll('.sig-check-row[draggable="true"]').forEach(row=>{
-      row.addEventListener('dragstart',e=>{arrastandoId=row.dataset.taskId;row.classList.add('dragging');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',arrastandoId)});
-      row.addEventListener('dragend',()=>{row.classList.remove('dragging');arrastandoId=null;wrap.querySelectorAll('.sig-day-list').forEach(x=>x.classList.remove('drag-over'))});
+      row.addEventListener('dragstart',e=>{
+        arrastando={id:row.dataset.taskId,chave:row.closest('.sig-day-list')?.dataset.date,row};
+        row.classList.add('dragging');
+        e.dataTransfer.effectAllowed='move';
+        e.dataTransfer.setData('text/plain',arrastando.id);
+      });
+      row.addEventListener('dragend',()=>{
+        row.classList.remove('dragging');
+        wrap.querySelectorAll('.sig-day-body').forEach(x=>x.classList.remove('drag-zone'));
+        arrastando=null;
+      });
     });
+
     wrap.querySelectorAll('.sig-day-list[data-date]').forEach(day=>{
-      day.addEventListener('dragover',e=>{e.preventDefault();day.classList.add('drag-over')});
-      day.addEventListener('dragleave',()=>day.classList.remove('drag-over'));
-      day.addEventListener('drop',async e=>{e.preventDefault();day.classList.remove('drag-over');const id=e.dataTransfer.getData('text/plain')||arrastandoId;if(id)await moverTarefa(id,day.dataset.date)});
+      const body=day.querySelector('.sig-day-body');
+      body.addEventListener('dragover',e=>{
+        if(!arrastando||arrastando.chave!==day.dataset.date)return;
+        e.preventDefault();
+        body.classList.add('drag-zone');
+        const candidatos=[...body.querySelectorAll('.sig-check-row:not(.dragging)')];
+        const alvo=candidatos.find(el=>e.clientY<el.getBoundingClientRect().top+el.getBoundingClientRect().height/2);
+        if(alvo)body.insertBefore(arrastando.row,alvo);else body.appendChild(arrastando.row);
+      });
+      body.addEventListener('drop',e=>{
+        if(!arrastando||arrastando.chave!==day.dataset.date)return;
+        e.preventDefault();
+        body.classList.remove('drag-zone');
+        salvarOrdem(day.dataset.date,[...body.querySelectorAll('.sig-check-row')].map(x=>x.dataset.taskId));
+      });
     });
   }
 
@@ -120,15 +134,15 @@
     const dias=Array.from({length:7},(_,i)=>{const d=new Date(ini);d.setDate(ini.getDate()+i);return d});
     const pct=tarefas.length?Math.round(concl/tarefas.length*100):0;
     wrap.innerHTML=`
-      <div class="sig-week-top"><div><div class="sig-week-title">Semana de ${fmtData(ini)} a ${fmtData(fim)}</div><div class="sig-week-sub">As tarefas de cada dia são organizadas automaticamente por prioridade.</div></div><div class="sig-week-nav"><button type="button" id="sigSemanaAnterior">← Semana anterior</button><button type="button" id="sigSemanaHoje">Semana atual</button><button type="button" id="sigSemanaProxima">Próxima semana →</button></div></div>
+      <div class="sig-week-top"><div><div class="sig-week-title">Semana de ${fmtData(ini)} a ${fmtData(fim)}</div><div class="sig-week-sub">Arraste as tarefas pela alça ⋮⋮ para organizar a ordem dentro de cada dia.</div></div><div class="sig-week-nav"><button type="button" id="sigSemanaAnterior">← Semana anterior</button><button type="button" id="sigSemanaHoje">Semana atual</button><button type="button" id="sigSemanaProxima">Próxima semana →</button></div></div>
       <div class="sig-week-stats"><div class="sig-stat"><b>${tarefas.length}</b><span>Tarefas da semana</span></div><div class="sig-stat"><b>${pend}</b><span>Pendentes</span></div><div class="sig-stat"><b>${concl}</b><span>Concluídas</span></div></div>
-      <div class="sig-checklist">${dias.map(d=>{const doDia=ordenarDia(tarefas.filter(t=>mesmoDia(t.data_prevista,d)));const chave=chaveDia(d);return `<section class="sig-day-list ${mesmoDia(d,hoje)?'today':''}" data-date="${chave}"><div class="sig-day-list-head"><div class="sig-day-label"><strong>${cap(d.toLocaleDateString('pt-BR',{weekday:'long'}))}</strong><span>${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}</span></div><div class="sig-day-tools"><div class="sig-day-count">${doDia.length} tarefa${doDia.length===1?'':'s'}</div><button class="sig-add-day" type="button" title="Nova tarefa neste dia" data-add-date="${chave}">+</button></div></div><div class="sig-day-body">${doDia.length?doDia.map(t=>{const feito=t.status==='concluida';const prio=String(t.prioridade||'normal').toLowerCase();return `<div class="sig-check-row ${feito?'done':''}" draggable="true" data-task-id="${t.id}"><button class="sig-box" type="button" title="${feito?'Concluída':'Marcar como concluída'}" onclick="${feito?'':'done(\'tarefas\',\''+t.id+'\',\'concluida\')'}">${feito?'✓':''}</button><div class="sig-check-main" onclick="editarTarefa('${t.id}')"><div class="sig-check-title">${esc(t.titulo||'Tarefa')}</div><div class="sig-check-meta">${hora(t.data_prevista)}${t.processo_id?' · '+esc(procNome(t.processo_id)):''}</div><div class="sig-check-tags"><span class="sig-tag-prio ${esc(prio)}">${esc(prio)}</span></div></div><div class="sig-check-actions"><button type="button" class="secondary" onclick="editarTarefa('${t.id}')">Editar</button></div></div>`}).join(''):'<div class="sig-empty">Sem tarefas para este dia</div>'}</div></section>`}).join('')}</div>
+      <div class="sig-checklist">${dias.map(d=>{const chave=chaveDia(d);const doDia=ordenarManual(tarefas.filter(t=>mesmoDia(t.data_prevista,d)),chave);return `<section class="sig-day-list ${mesmoDia(d,hoje)?'today':''}" data-date="${chave}"><div class="sig-day-list-head"><div class="sig-day-label"><strong>${cap(d.toLocaleDateString('pt-BR',{weekday:'long'}))}</strong><span>${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}</span></div><div class="sig-day-tools"><div class="sig-day-count">${doDia.length} tarefa${doDia.length===1?'':'s'}</div><button class="sig-add-day" type="button" title="Nova tarefa neste dia" data-add-date="${chave}">+</button></div></div><div class="sig-day-body">${doDia.length?doDia.map(t=>{const feito=t.status==='concluida';const prio=String(t.prioridade||'normal').toLowerCase();return `<div class="sig-check-row ${feito?'done':''}" draggable="true" data-task-id="${t.id}"><div class="sig-drag-handle" title="Arraste para reorganizar">⋮⋮</div><button class="sig-box" type="button" title="${feito?'Concluída':'Marcar como concluída'}" onclick="${feito?'':'done(\'tarefas\',\''+t.id+'\',\'concluida\')'}">${feito?'✓':''}</button><div class="sig-check-main" onclick="editarTarefa('${t.id}')"><div class="sig-check-title">${esc(t.titulo||'Tarefa')}</div><div class="sig-check-meta">${hora(t.data_prevista)}${t.processo_id?' · '+esc(procNome(t.processo_id)):''}</div><div class="sig-check-tags"><span class="sig-tag-prio ${esc(prio)}">${esc(prio)}</span></div></div><div class="sig-check-actions"><button type="button" class="secondary" onclick="editarTarefa('${t.id}')">Editar</button></div></div>`}).join(''):'<div class="sig-empty">Sem tarefas para este dia</div>'}</div></section>`}).join('')}</div>
       <div class="sig-week-foot"><span>${pct}% da semana concluída</span><div class="sig-progress"><i style="width:${pct}%"></i></div><span>${concl}/${tarefas.length}</span></div>`;
     document.getElementById('sigSemanaAnterior').onclick=()=>{semanaBase.setDate(semanaBase.getDate()-7);renderSemanal()};
     document.getElementById('sigSemanaHoje').onclick=()=>{semanaBase=inicioSemana(new Date());renderSemanal()};
     document.getElementById('sigSemanaProxima').onclick=()=>{semanaBase.setDate(semanaBase.getDate()+7);renderSemanal()};
     wrap.querySelectorAll('[data-add-date]').forEach(b=>b.onclick=()=>abrirNovaNoDia(b.dataset.addDate));
-    ativarDnD(wrap);
+    ativarOrdemManual(wrap);
   }
 
   const renderAnterior=window.render;if(typeof renderAnterior==='function')window.render=function(){renderAnterior();renderSemanal()};
