@@ -10,7 +10,7 @@
       if(Number.isNaN(d.getTime()))return fmt(v);
       const dia=d.toLocaleDateString('pt-BR',{weekday:'long'});
       const dataHora=d.toLocaleString('pt-BR');
-      return dia.charAt(0).toUpperCase()+dia.slice(1)+' — '+dataHora;
+      return dataHora+' — '+dia.charAt(0).toUpperCase()+dia.slice(1);
     }
 
     function renderResumoComDia(){
