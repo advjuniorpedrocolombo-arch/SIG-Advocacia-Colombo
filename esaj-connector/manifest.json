@@ -1,13 +1,36 @@
 {
   "manifest_version": 3,
   "name": "SIG Advocacia Colombo — Conector Tribunais",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "Integra o SIG ao e-SAJ e ao PJe usando as sessões autenticadas do navegador.",
   "permissions": ["storage", "activeTab", "tabs", "clipboardRead", "clipboardWrite"],
   "host_permissions": [
     "https://esaj.tjsp.jus.br/*",
     "https://advjuniorpedrocolombo-arch.github.io/*",
-    "https://pje.trt*.jus.br/*"
+    "https://pje.trt1.jus.br/*",
+    "https://pje.trt2.jus.br/*",
+    "https://pje.trt3.jus.br/*",
+    "https://pje.trt4.jus.br/*",
+    "https://pje.trt5.jus.br/*",
+    "https://pje.trt6.jus.br/*",
+    "https://pje.trt7.jus.br/*",
+    "https://pje.trt8.jus.br/*",
+    "https://pje.trt9.jus.br/*",
+    "https://pje.trt10.jus.br/*",
+    "https://pje.trt11.jus.br/*",
+    "https://pje.trt12.jus.br/*",
+    "https://pje.trt13.jus.br/*",
+    "https://pje.trt14.jus.br/*",
+    "https://pje.trt15.jus.br/*",
+    "https://pje.trt16.jus.br/*",
+    "https://pje.trt17.jus.br/*",
+    "https://pje.trt18.jus.br/*",
+    "https://pje.trt19.jus.br/*",
+    "https://pje.trt20.jus.br/*",
+    "https://pje.trt21.jus.br/*",
+    "https://pje.trt22.jus.br/*",
+    "https://pje.trt23.jus.br/*",
+    "https://pje.trt24.jus.br/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -28,7 +51,32 @@
       "run_at": "document_start"
     },
     {
-      "matches": ["https://pje.trt*.jus.br/*"],
+      "matches": [
+        "https://pje.trt1.jus.br/*",
+        "https://pje.trt2.jus.br/*",
+        "https://pje.trt3.jus.br/*",
+        "https://pje.trt4.jus.br/*",
+        "https://pje.trt5.jus.br/*",
+        "https://pje.trt6.jus.br/*",
+        "https://pje.trt7.jus.br/*",
+        "https://pje.trt8.jus.br/*",
+        "https://pje.trt9.jus.br/*",
+        "https://pje.trt10.jus.br/*",
+        "https://pje.trt11.jus.br/*",
+        "https://pje.trt12.jus.br/*",
+        "https://pje.trt13.jus.br/*",
+        "https://pje.trt14.jus.br/*",
+        "https://pje.trt15.jus.br/*",
+        "https://pje.trt16.jus.br/*",
+        "https://pje.trt17.jus.br/*",
+        "https://pje.trt18.jus.br/*",
+        "https://pje.trt19.jus.br/*",
+        "https://pje.trt20.jus.br/*",
+        "https://pje.trt21.jus.br/*",
+        "https://pje.trt22.jus.br/*",
+        "https://pje.trt23.jus.br/*",
+        "https://pje.trt24.jus.br/*"
+      ],
       "js": ["pje-auth.js"],
       "run_at": "document_idle"
     }
