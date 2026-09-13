@@ -13,14 +13,20 @@
     if(!p){alert('Processo não encontrado.');return;}
     const numero=p.numero_cnj||'';
     const n=norm(numero);
+    const t=String(p.tribunal||'').toUpperCase().replace(/\s+/g,'');
+    const ramoTribunal=n.length===20?n.slice(13,16):'';
     let url=null;
-    if(n.length===20 && (n.slice(13,16)==='826' || String(p.tribunal||'').toUpperCase()==='TJSP')) url=urlTJSP(numero);
-    if(!url){
-      const t=String(p.tribunal||'').toUpperCase();
-      if(t.includes('TRT')||n.slice(13,16)==='502') url='https://pje.trt2.jus.br/consultaprocessual/';
-      else if(t.includes('TRF')||n.slice(13,16)==='403') url='https://pje1g.trf3.jus.br/pje/ConsultaPublica/listView.seam';
-      else if(t.includes('TJSP')) url='https://esaj.tjsp.jus.br/cpopg/open.do';
+
+    if(n.length===20 && (ramoTribunal==='826' || t.includes('TJSP'))) {
+      url=urlTJSP(numero);
+    } else if(t.includes('TRT15') || ramoTribunal==='515') {
+      url='https://pje.trt15.jus.br/consultaprocessual';
+    } else if(t.includes('TRT2') || ramoTribunal==='502') {
+      url='https://pje.trt2.jus.br/consultaprocessual/';
+    } else if(t.includes('TRF3') || ramoTribunal==='403') {
+      url='https://pje1g.trf3.jus.br/pje/ConsultaPublica/listView.seam';
     }
+
     if(!url){alert('Ainda não há um atalho configurado para este tribunal.');return;}
     window.open(url,'_blank','noopener');
   };
