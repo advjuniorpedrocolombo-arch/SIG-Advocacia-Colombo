@@ -11,6 +11,26 @@
       return vinculado?.nome || p.partes || '—';
     }
 
+    function normCNJ(v){return String(v||'').replace(/\D/g,'')}
+    function fmtCNJ(n){n=normCNJ(n);return n.replace(/^(\d{7})(\d{2})(\d{4})(\d)(\d{2})(\d{4})$/,'$1-$2.$3.$4.$5.$6')}
+    function urlTJSP(numero){
+      const n=normCNJ(numero);if(n.length!==20)return null;
+      const f=fmtCNJ(n),digAno=f.slice(0,15),foro=n.slice(-4);
+      const q=new URLSearchParams({conversationId:'','dadosConsulta.localPesquisa.cdLocal':'-1',cbPesquisa:'NUMPROC','dadosConsulta.tipoNuProcesso':'UNIFICADO',numeroDigitoAnoUnificado:digAno,foroNumeroUnificado:foro,'dadosConsulta.valorConsultaNuUnificado':f,'dadosConsulta.valorConsulta':''});
+      return 'https://esaj.tjsp.jus.br/cpopg/search.do?'+q.toString();
+    }
+    window.abrirProcessoTribunal=function(id){
+      const p=(D.processos||[]).find(x=>x.id===id);
+      if(!p){alert('Processo não encontrado.');return;}
+      const n=normCNJ(p.numero_cnj),t=String(p.tribunal||'').toUpperCase();
+      let url=null;
+      if(n.length===20&&(n.slice(13,16)==='826'||t==='TJSP'||t.includes('TJSP')))url=urlTJSP(p.numero_cnj);
+      else if(t.includes('TRT2')||n.slice(13,16)==='502')url='https://pje.trt2.jus.br/consultaprocessual/';
+      else if(t.includes('TRF3')||n.slice(13,16)==='403')url='https://pje1g.trf3.jus.br/pje/ConsultaPublica/listView.seam';
+      if(!url){alert('Ainda não há um atalho configurado para este tribunal.');return;}
+      window.open(url,'_blank','noopener');
+    };
+
     async function prepararLoteEsaj(){
       try{
         const processos=(D.processos||[]).filter(p=>{
@@ -140,7 +160,8 @@
         const btnAtualizar=!arquivado&&p.numero_cnj?`<button type="button" class="secondary btnData" onclick="consultarDataJud('${p.id}',this)">Atualizar processo</button>`:'';
         const btnEditar=`<button type="button" class="secondary" style="margin-left:6px" onclick="editarProcessoSIG('${p.id}')">Editar</button>`;
         const btnArquivo=arquivado?`<button type="button" class="secondary" style="margin-left:6px" onclick="reativarProcessoSIG('${p.id}','${String(p.numero_cnj||'').replace(/'/g,'')}')">Reativar</button>`:`<button type="button" class="secondary" style="margin-left:6px" onclick="arquivarProcessoSIG('${p.id}','${String(p.numero_cnj||'').replace(/'/g,'')}')">Arquivar</button>`;
-        return `<tr><td>${esc(p.numero_cnj||'')}</td><td>${esc(clienteDoProcesso(p))}</td><td>${esc(p.area||'—')}</td><td>${esc(p.comarca||'—')}</td><td>${esc(p.vara||'—')}</td><td>${esc(p.tribunal||'—')}</td><td>${esc(p.status||'—')}</td><td>${datajudLabel(p)}</td><td style="white-space:nowrap">${btnAtualizar} ${btnEditar} ${btnArquivo} <button type="button" class="secondary" style="color:#b42318;margin-left:6px" onclick="excluirProcessoSIG('${p.id}','${String(p.numero_cnj||'').replace(/'/g,'')}')">Excluir</button></td></tr>`;
+        const btnTribunal=p.numero_cnj?` <button type="button" class="secondary" title="Abrir processo no tribunal" style="padding:4px 8px;margin-left:5px" onclick="abrirProcessoTribunal('${p.id}')">↗</button>`:'';
+        return `<tr><td>${esc(p.numero_cnj||'')}${btnTribunal}</td><td>${esc(clienteDoProcesso(p))}</td><td>${esc(p.area||'—')}</td><td>${esc(p.comarca||'—')}</td><td>${esc(p.vara||'—')}</td><td>${esc(p.tribunal||'—')}</td><td>${esc(p.status||'—')}</td><td>${datajudLabel(p)}</td><td style="white-space:nowrap">${btnAtualizar} ${btnEditar} ${btnArquivo} <button type="button" class="secondary" style="color:#b42318;margin-left:6px" onclick="excluirProcessoSIG('${p.id}','${String(p.numero_cnj||'').replace(/'/g,'')}')">Excluir</button></td></tr>`;
       }).join('');
       const saida=document.getElementById('resultadoBuscaProcesso')||document.getElementById('contagemProcessos'),ativos=todos.filter(p=>String(p.status||'').toLowerCase()!=='arquivado').length,arquivados=todos.length-ativos;
       if(saida)saida.textContent=busca?(lista.length?lista.length+' processo(s) encontrado(s)':'Processo não encontrado'):mostrarArquivados?`${todos.length} processo(s) no total — ${arquivados} arquivado(s)`: `${ativos} processo(s) ativo(s)`;
