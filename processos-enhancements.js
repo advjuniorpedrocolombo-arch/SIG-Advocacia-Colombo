@@ -138,7 +138,7 @@
       const sec=document.getElementById('processos');if(!sec)return;
       garantirBotoesTopo(sec);garantirModalEditar();
       const th=sec.querySelector('thead tr');if(th)th.innerHTML='<th>Número</th><th>Meu cliente</th><th>Área</th><th>Comarca</th><th>Vara</th><th>Tribunal</th><th>Status</th><th>Consulta</th><th>Ação</th>';
-      const table=sec.querySelector('table');if(table)table.style.minWidth='1650px';
+      const table=sec.querySelector('table');if(table)table.style.minWidth='1750px';
       if(!document.getElementById('buscaProcesso')){
         const toolbar=sec.querySelector('.toolbar'),box=document.createElement('div');
         box.style.cssText='display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0 14px';
@@ -160,8 +160,8 @@
         const btnAtualizar=!arquivado&&p.numero_cnj?`<button type="button" class="secondary btnData" onclick="consultarDataJud('${p.id}',this)">Atualizar processo</button>`:'';
         const btnEditar=`<button type="button" class="secondary" style="margin-left:6px" onclick="editarProcessoSIG('${p.id}')">Editar</button>`;
         const btnArquivo=arquivado?`<button type="button" class="secondary" style="margin-left:6px" onclick="reativarProcessoSIG('${p.id}','${String(p.numero_cnj||'').replace(/'/g,'')}')">Reativar</button>`:`<button type="button" class="secondary" style="margin-left:6px" onclick="arquivarProcessoSIG('${p.id}','${String(p.numero_cnj||'').replace(/'/g,'')}')">Arquivar</button>`;
-        const btnTribunal=p.numero_cnj?` <button type="button" class="secondary" title="Abrir processo no tribunal" style="padding:4px 8px;margin-left:5px" onclick="abrirProcessoTribunal('${p.id}')">↗</button>`:'';
-        return `<tr><td>${esc(p.numero_cnj||'')}${btnTribunal}</td><td>${esc(clienteDoProcesso(p))}</td><td>${esc(p.area||'—')}</td><td>${esc(p.comarca||'—')}</td><td>${esc(p.vara||'—')}</td><td>${esc(p.tribunal||'—')}</td><td>${esc(p.status||'—')}</td><td>${datajudLabel(p)}</td><td style="white-space:nowrap">${btnAtualizar} ${btnEditar} ${btnArquivo} <button type="button" class="secondary" style="color:#b42318;margin-left:6px" onclick="excluirProcessoSIG('${p.id}','${String(p.numero_cnj||'').replace(/'/g,'')}')">Excluir</button></td></tr>`;
+        const btnTribunal=p.numero_cnj?` <button type="button" class="secondary" title="Abrir processo no tribunal" style="padding:5px 9px;margin-left:7px;font-weight:700;white-space:nowrap" onclick="abrirProcessoTribunal('${p.id}')">Tribunal ↗</button>`:'';
+        return `<tr><td style="white-space:nowrap">${esc(p.numero_cnj||'')}${btnTribunal}</td><td>${esc(clienteDoProcesso(p))}</td><td>${esc(p.area||'—')}</td><td>${esc(p.comarca||'—')}</td><td>${esc(p.vara||'—')}</td><td>${esc(p.tribunal||'—')}</td><td>${esc(p.status||'—')}</td><td>${datajudLabel(p)}</td><td style="white-space:nowrap">${btnAtualizar} ${btnEditar} ${btnArquivo} <button type="button" class="secondary" style="color:#b42318;margin-left:6px" onclick="excluirProcessoSIG('${p.id}','${String(p.numero_cnj||'').replace(/'/g,'')}')">Excluir</button></td></tr>`;
       }).join('');
       const saida=document.getElementById('resultadoBuscaProcesso')||document.getElementById('contagemProcessos'),ativos=todos.filter(p=>String(p.status||'').toLowerCase()!=='arquivado').length,arquivados=todos.length-ativos;
       if(saida)saida.textContent=busca?(lista.length?lista.length+' processo(s) encontrado(s)':'Processo não encontrado'):mostrarArquivados?`${todos.length} processo(s) no total — ${arquivados} arquivado(s)`: `${ativos} processo(s) ativo(s)`;
