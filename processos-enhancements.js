@@ -11,6 +11,22 @@
       return vinculado?.nome || p.partes || '—';
     }
 
+    async function prepararLoteEsaj(){
+      try{
+        const processos=(D.processos||[]).filter(p=>{
+          const n=String(p.numero_cnj||'').replace(/\D/g,'');
+          const ativo=String(p.status||'').toLowerCase()!=='arquivado';
+          const tjsp=n.length===20&&(n.slice(13,16)==='826'||String(p.tribunal||'').toUpperCase()==='TJSP');
+          return ativo&&tjsp;
+        });
+        if(!processos.length){alert('Nenhum processo TJSP ativo encontrado para atualização em lote.');return;}
+        const pacote={tipo:'SIG_ESAJ_LOTE',gerado_em:new Date().toISOString(),processos:processos.map(p=>({id:p.id,numero_cnj:p.numero_cnj,titulo:p.titulo}))};
+        await navigator.clipboard.writeText(JSON.stringify(pacote));
+        alert('Lote preparado com '+processos.length+' processo(s) TJSP ativo(s).\n\nAgora abra a extensão SIG — Conector e-SAJ e clique em “Atualizar lote copiado”.');
+      }catch(e){alert('Não foi possível preparar o lote: '+(e?.message||e));}
+    }
+    window.prepararLoteEsaj=prepararLoteEsaj;
+
     function ligarBusca(){
       const campo=document.getElementById('buscaProcesso');
       const btn=document.getElementById('btnBuscarProcesso');
@@ -42,9 +58,29 @@
       }
     }
 
+    function garantirBotoesTopo(sec){
+      const toolbar=sec.querySelector('.toolbar');
+      if(!toolbar)return;
+      let actions=toolbar.lastElementChild;
+      if(!actions||actions===toolbar.firstElementChild){
+        actions=document.createElement('div');
+        actions.style.cssText='display:flex;gap:8px;flex-wrap:wrap';
+        toolbar.appendChild(actions);
+      }
+      if(!document.getElementById('btnAtualizarEsajLote')){
+        const b=document.createElement('button');
+        b.type='button';b.className='secondary';b.id='btnAtualizarEsajLote';
+        b.textContent='Atualizar e-SAJ (lote)';
+        b.onclick=prepararLoteEsaj;
+        actions.insertBefore(b,actions.firstChild);
+      }
+    }
+
     function prepararTelaProcessos(){
       const sec=document.getElementById('processos');
       if(!sec)return;
+
+      garantirBotoesTopo(sec);
 
       const th=sec.querySelector('thead tr');
       if(th)th.innerHTML='<th>Número</th><th>Meu cliente</th><th>Área</th><th>Comarca</th><th>Vara</th><th>Tribunal</th><th>Status</th><th>Consulta</th><th>Ação</th>';
@@ -61,10 +97,7 @@
         const limpar=document.getElementById('btnLimparBuscaProcesso') || document.getElementById('limparBuscaProcesso');
         if(limpar){
           const b=document.createElement('button');
-          b.type='button';
-          b.className='secondary';
-          b.id='btnAlternarArquivados';
-          b.textContent='Mostrar arquivados';
+          b.type='button';b.className='secondary';b.id='btnAlternarArquivados';b.textContent='Mostrar arquivados';
           limpar.insertAdjacentElement('afterend',b);
         }
       }
@@ -87,6 +120,9 @@
 
       tb.innerHTML=lista.map(p=>{
         const arquivado=String(p.status||'').toLowerCase()==='arquivado';
+        const btnAtualizar=!arquivado&&p.numero_cnj
+          ? `<button type="button" class="secondary btnData" onclick="consultarDataJud('${p.id}',this)">Atualizar processo</button>`
+          : '';
         const btnArquivo=arquivado
           ? `<button type="button" class="secondary" style="margin-left:6px" onclick="reativarProcessoSIG('${p.id}','${String(p.numero_cnj||'').replace(/'/g,'')}')">Reativar</button>`
           : `<button type="button" class="secondary" style="margin-left:6px" onclick="arquivarProcessoSIG('${p.id}','${String(p.numero_cnj||'').replace(/'/g,'')}')">Arquivar</button>`;
@@ -99,7 +135,7 @@
         <td>${esc(p.tribunal||'—')}</td>
         <td>${esc(p.status||'—')}</td>
         <td>${datajudLabel(p)}</td>
-        <td style="white-space:nowrap">${acaoProcesso(p)} ${btnArquivo} <button type="button" class="secondary" style="color:#b42318;margin-left:6px" onclick="excluirProcessoSIG('${p.id}','${String(p.numero_cnj||'').replace(/'/g,'')}')">Excluir</button></td>
+        <td style="white-space:nowrap">${btnAtualizar} ${btnArquivo} <button type="button" class="secondary" style="color:#b42318;margin-left:6px" onclick="excluirProcessoSIG('${p.id}','${String(p.numero_cnj||'').replace(/'/g,'')}')">Excluir</button></td>
       </tr>`;
       }).join('');
 
@@ -130,41 +166,22 @@
       const anterior=String(atual?.observacoes||'').trim();
       const novo=anterior?anterior+'\n\n'+registro:registro;
 
-      const {error}=await sb.from('processos').update({
-        status:'arquivado',
-        observacoes:novo,
-        monitoramento_ativo:false,
-        monitorar_datajud:false,
-        atualizado_em:new Date().toISOString()
-      }).eq('id',id);
+      const {error}=await sb.from('processos').update({status:'arquivado',observacoes:novo,monitoramento_ativo:false,monitorar_datajud:false,atualizado_em:new Date().toISOString()}).eq('id',id);
       if(error){alert('Não foi possível arquivar o processo: '+error.message);return;}
-
-      await load();
-      alert('Processo arquivado com sucesso.');
+      await load();alert('Processo arquivado com sucesso.');
     };
 
     window.reativarProcessoSIG=async function(id,numero){
       if(!confirm('Reativar o processo '+numero+'?'))return;
-
       const {data:atual,error:erroBusca}=await sb.from('processos').select('observacoes').eq('id',id).single();
       if(erroBusca){alert('Não foi possível preparar a reativação: '+erroBusca.message);return;}
-
       const carimbo=new Date().toLocaleString('pt-BR');
       const registro=`[REATIVAÇÃO ${carimbo}] Processo reativado no SIG.`;
       const anterior=String(atual?.observacoes||'').trim();
       const novo=anterior?anterior+'\n\n'+registro:registro;
-
-      const {error}=await sb.from('processos').update({
-        status:'ativo',
-        observacoes:novo,
-        monitoramento_ativo:true,
-        monitorar_datajud:true,
-        atualizado_em:new Date().toISOString()
-      }).eq('id',id);
+      const {error}=await sb.from('processos').update({status:'ativo',observacoes:novo,monitoramento_ativo:true,monitorar_datajud:true,atualizado_em:new Date().toISOString()}).eq('id',id);
       if(error){alert('Não foi possível reativar o processo: '+error.message);return;}
-
-      await load();
-      alert('Processo reativado com sucesso.');
+      await load();alert('Processo reativado com sucesso.');
     };
 
     window.excluirProcessoSIG=async function(id,numero){
@@ -172,19 +189,12 @@
       if(!confirm(aviso))return;
       const {error}=await sb.from('processos').delete().eq('id',id);
       if(error){alert('Não foi possível excluir o processo: '+error.message);return;}
-      await load();
-      alert('Processo excluído definitivamente do SIG.');
+      await load();alert('Processo excluído definitivamente do SIG.');
     };
 
     const original=render;
-    render=function(){
-      original();
-      prepararTelaProcessos();
-      renderProcessosAprimorados();
-    };
-
-    prepararTelaProcessos();
-    renderProcessosAprimorados();
+    render=function(){original();prepararTelaProcessos();renderProcessosAprimorados();};
+    prepararTelaProcessos();renderProcessosAprimorados();
   };
   esperar();
 })();
