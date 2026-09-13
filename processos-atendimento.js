@@ -5,6 +5,10 @@
     const s=String(v||'').trim().toUpperCase();
     return (s==='PARTICULAR'||s==='DPESP')?s:null;
   }
+  function ehTrabalhista(p){
+    const area=String(p?.area||'').trim().toLowerCase();
+    return area.includes('trabalh');
+  }
 
   function instalarCampoNovo(){
     const form=document.getElementById('fProcesso');
@@ -78,7 +82,7 @@
   }
 
   function estiloBotoes(){
-    ['TODOS','PARTICULAR','DPESP'].forEach(v=>{
+    ['TODOS','PARTICULAR','DPESP','TRABALHISTA'].forEach(v=>{
       const b=document.getElementById('filtroAtendimento'+v);
       if(!b)return;
       b.className=v===filtro?'primary':'secondary';
@@ -92,9 +96,9 @@
     const box=document.createElement('div');
     box.id='filtrosTipoAtendimento';
     box.style.cssText='display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 14px';
-    box.innerHTML='<span class="small" style="font-weight:700">Filtrar atendimento:</span><button type="button" id="filtroAtendimentoTODOS" class="primary">Todos</button><button type="button" id="filtroAtendimentoPARTICULAR" class="secondary">Particular</button><button type="button" id="filtroAtendimentoDPESP" class="secondary">DPESP</button>';
+    box.innerHTML='<span class="small" style="font-weight:700">Filtrar processos:</span><button type="button" id="filtroAtendimentoTODOS" class="primary">Todos</button><button type="button" id="filtroAtendimentoPARTICULAR" class="secondary">Particular</button><button type="button" id="filtroAtendimentoDPESP" class="secondary">DPESP</button><button type="button" id="filtroAtendimentoTRABALHISTA" class="secondary">Trabalhista</button>';
     busca.insertAdjacentElement('afterend',box);
-    ['TODOS','PARTICULAR','DPESP'].forEach(v=>document.getElementById('filtroAtendimento'+v).onclick=()=>{filtro=v;estiloBotoes();window.renderProcessosAprimorados?.();});
+    ['TODOS','PARTICULAR','DPESP','TRABALHISTA'].forEach(v=>document.getElementById('filtroAtendimento'+v).onclick=()=>{filtro=v;estiloBotoes();window.renderProcessosAprimorados?.();});
   }
 
   function instalarRender(){
@@ -106,7 +110,7 @@
         original();
       }else{
         const todos=Array.isArray(D.processos)?D.processos:[];
-        const filtrados=todos.filter(p=>normalizarTipo(p.tipo_atendimento)===filtro);
+        const filtrados=todos.filter(p=>filtro==='TRABALHISTA'?ehTrabalhista(p):normalizarTipo(p.tipo_atendimento)===filtro);
         D.processos=filtrados;
         try{original();}finally{D.processos=todos;}
         const mproc=document.getElementById('mproc');
@@ -114,7 +118,8 @@
         const saida=document.getElementById('resultadoBuscaProcesso')||document.getElementById('contagemProcessos');
         if(saida){
           const ativos=filtrados.filter(p=>String(p.status||'').toLowerCase()!=='arquivado').length;
-          saida.textContent=`${ativos} processo(s) ${filtro==='PARTICULAR'?'particular(es)':'DPESP'} ativo(s)`;
+          const rotulo=filtro==='PARTICULAR'?'particular(es)':filtro==='DPESP'?'DPESP':'trabalhista(s)';
+          saida.textContent=`${ativos} processo(s) ${rotulo} ativo(s)`;
         }
       }
       marcarTipos();
