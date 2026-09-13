@@ -8,13 +8,12 @@
     const q=new URLSearchParams({conversationId:'','dadosConsulta.localPesquisa.cdLocal':'-1',cbPesquisa:'NUMPROC','dadosConsulta.tipoNuProcesso':'UNIFICADO',numeroDigitoAnoUnificado:digAno,foroNumeroUnificado:foro,'dadosConsulta.valorConsultaNuUnificado':f,'dadosConsulta.valorConsulta':''});
     return 'https://esaj.tjsp.jus.br/cpopg/search.do?'+q.toString();
   }
-  function urlTRT(numero){
+  function urlTRTAutenticado(numero){
     const n=norm(numero);
     if(n.length!==20||n[13]!=='5')return null;
     const trt=Number(n.slice(14,16));
     if(!trt)return null;
-    const processo=fmt(n);
-    return `https://pje.trt${trt}.jus.br/consultaprocessual/detalhe-processo/${encodeURIComponent(processo)}/1`;
+    return `https://pje.trt${trt}.jus.br/primeirograu/`;
   }
 
   window.abrirProcessoTribunal=function(ref){
@@ -35,7 +34,10 @@
     if(ramoTribunal==='826' || t.includes('TJSP')){
       url=urlTJSP(numero);
     }else if(n[13]==='5' || t.startsWith('TRT')){
-      url=urlTRT(numero);
+      // A extensão SIG — Conector Tribunais intercepta este clique,
+      // guarda o CNJ e abre/pesquisa o processo na sessão autenticada.
+      // Este fallback nunca usa a consulta pública com CAPTCHA.
+      url=urlTRTAutenticado(numero);
     }else if(ramoTribunal==='403' || t.includes('TRF3')){
       url='https://pje1g.trf3.jus.br/pje/ConsultaPublica/listView.seam';
     }
