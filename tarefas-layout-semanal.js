@@ -15,33 +15,37 @@
   #tarefas.sig-weekly .sig-stat{background:#fff;border:1px solid #e1e8f0;border-radius:12px;padding:8px 12px;min-width:108px;box-shadow:0 3px 10px rgba(16,44,85,.04)}
   #tarefas.sig-weekly .sig-stat b{display:block;font-size:19px;color:#102c55}
   #tarefas.sig-weekly .sig-stat span{font-size:10px;color:#73849a}
-  #tarefas.sig-weekly .sig-week-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;width:100%;max-width:100%;overflow:visible;padding-bottom:2px}
-  #tarefas.sig-weekly .sig-day{min-width:0;width:100%;background:#f8fbff;border:1px solid #dfe8f2;border-radius:13px;padding:7px;min-height:205px;overflow:hidden}
-  #tarefas.sig-weekly .sig-day.today{border:2px solid #2f6fb7;background:#f3f8ff}
-  #tarefas.sig-weekly .sig-day-head{text-align:center;padding:2px 1px 7px;border-bottom:1px solid #dfe8f2;margin-bottom:7px}
-  #tarefas.sig-weekly .sig-day-name{font-size:9px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:#173b72;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  #tarefas.sig-weekly .sig-day-date{font-family:Georgia,serif;font-size:22px;font-weight:700;color:#102c55;line-height:1.05}
-  #tarefas.sig-weekly .sig-day-month{font-size:8px;color:#75869a;text-transform:uppercase;white-space:nowrap}
-  #tarefas.sig-weekly .sig-task-card{position:relative;background:#fff;border:1px solid #e3eaf2;border-radius:10px;padding:8px 6px 7px 29px;margin-bottom:6px;box-shadow:0 3px 9px rgba(16,44,85,.05);cursor:pointer;transition:.15s ease;min-width:0;overflow:hidden}
-  #tarefas.sig-weekly .sig-task-card:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgba(16,44,85,.09)}
-  #tarefas.sig-weekly .sig-task-card.done{opacity:.62}
-  #tarefas.sig-weekly .sig-task-check{position:absolute;left:6px;top:8px;width:17px;height:17px;border-radius:50%;display:grid;place-items:center;background:#eaf4ff;color:#173b72;font-size:10px;font-weight:900;border:1px solid #c9d9ec;padding:0}
-  #tarefas.sig-weekly .sig-task-card.done .sig-task-check{background:#dff5ea;color:#087a4b;border-color:#bde8d2}
-  #tarefas.sig-weekly .sig-task-title{font-size:10px;font-weight:700;color:#172033;line-height:1.2;overflow-wrap:anywhere}
-  #tarefas.sig-weekly .sig-task-time{font-size:8.5px;color:#60758d;margin-top:4px;overflow-wrap:anywhere}
-  #tarefas.sig-weekly .sig-task-prio{display:inline-block;margin-top:5px;padding:2px 5px;border-radius:999px;font-size:7.5px;font-weight:800;text-transform:uppercase;background:#eef3fb;color:#173b72}
-  #tarefas.sig-weekly .sig-task-prio.urgente{background:#fee4e2;color:#b42318}
-  #tarefas.sig-weekly .sig-task-prio.alta{background:#fff1dc;color:#b54708}
-  #tarefas.sig-weekly .sig-task-actions{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap}
-  #tarefas.sig-weekly .sig-task-actions button{padding:4px 5px;border-radius:6px;font-size:8px;white-space:nowrap}
-  #tarefas.sig-weekly .sig-empty{text-align:center;color:#a0adbb;font-size:9px;padding:22px 2px}
+  #tarefas.sig-weekly .sig-checklist{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+  #tarefas.sig-weekly .sig-day-list{background:#fff;border:1px solid #e1e8f0;border-radius:15px;overflow:hidden;box-shadow:0 4px 14px rgba(16,44,85,.04)}
+  #tarefas.sig-weekly .sig-day-list.today{border:2px solid #2f6fb7}
+  #tarefas.sig-weekly .sig-day-list-head{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#f4f8fd;padding:10px 12px;border-bottom:1px solid #e4ebf3}
+  #tarefas.sig-weekly .sig-day-list.today .sig-day-list-head{background:#eaf3ff}
+  #tarefas.sig-weekly .sig-day-label{display:flex;align-items:baseline;gap:8px;color:#102c55}
+  #tarefas.sig-weekly .sig-day-label strong{font-family:Georgia,serif;font-size:18px}
+  #tarefas.sig-weekly .sig-day-label span{font-size:11px;color:#6f8196}
+  #tarefas.sig-weekly .sig-day-count{font-size:10px;font-weight:700;color:#173b72;background:#eaf2fb;border-radius:999px;padding:4px 7px}
+  #tarefas.sig-weekly .sig-day-body{padding:8px 10px}
+  #tarefas.sig-weekly .sig-check-row{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:9px;align-items:center;padding:9px 4px;border-bottom:1px solid #edf1f5}
+  #tarefas.sig-weekly .sig-check-row:last-child{border-bottom:0}
+  #tarefas.sig-weekly .sig-check-row.done{opacity:.62}
+  #tarefas.sig-weekly .sig-box{width:22px;height:22px;border:2px solid #6d86a5;border-radius:5px;background:#fff;display:grid;place-items:center;color:#fff;font-size:14px;font-weight:900;padding:0;cursor:pointer}
+  #tarefas.sig-weekly .sig-check-row.done .sig-box{background:#173b72;border-color:#173b72}
+  #tarefas.sig-weekly .sig-check-main{min-width:0;cursor:pointer}
+  #tarefas.sig-weekly .sig-check-title{font-size:12px;font-weight:700;color:#172033;line-height:1.25}
+  #tarefas.sig-weekly .sig-check-row.done .sig-check-title{text-decoration:line-through}
+  #tarefas.sig-weekly .sig-check-meta{font-size:10px;color:#6b7e94;margin-top:3px;overflow-wrap:anywhere}
+  #tarefas.sig-weekly .sig-check-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
+  #tarefas.sig-weekly .sig-tag-prio{padding:3px 6px;border-radius:999px;font-size:8px;font-weight:800;text-transform:uppercase;background:#eef3fb;color:#173b72}
+  #tarefas.sig-weekly .sig-tag-prio.urgente{background:#fee4e2;color:#b42318}
+  #tarefas.sig-weekly .sig-tag-prio.alta{background:#fff1dc;color:#b54708}
+  #tarefas.sig-weekly .sig-check-actions{display:flex;gap:5px;align-items:center}
+  #tarefas.sig-weekly .sig-check-actions button{padding:5px 7px;border-radius:7px;font-size:9px;white-space:nowrap}
+  #tarefas.sig-weekly .sig-empty{text-align:center;color:#a0adbb;font-size:10px;padding:18px 4px}
   #tarefas.sig-weekly .sig-week-foot{margin-top:12px;background:#fff;border:1px solid #e1e8f0;border-radius:12px;padding:8px 12px;color:#6b7d92;font-size:11px;display:flex;justify-content:space-between;gap:8px;align-items:center}
   #tarefas.sig-weekly .sig-progress{height:5px;background:#edf2f7;border-radius:999px;overflow:hidden;flex:1;max-width:280px}
   #tarefas.sig-weekly .sig-progress > i{display:block;height:100%;background:#173b72;border-radius:999px}
-  @media(max-width:1180px){#tarefas.sig-weekly .sig-week-days{grid-template-columns:repeat(4,minmax(0,1fr))}}
-  @media(max-width:900px){#tarefas.sig-weekly .sig-week-days{grid-template-columns:repeat(3,minmax(0,1fr))}#tarefas.sig-weekly .sig-week-top{align-items:flex-start;flex-direction:column}.main{min-width:0}}
-  @media(max-width:650px){#tarefas.sig-weekly .sig-week-days{grid-template-columns:repeat(2,minmax(0,1fr))}}
-  @media(max-width:430px){#tarefas.sig-weekly .sig-week-days{grid-template-columns:1fr}}
+  @media(max-width:920px){#tarefas.sig-weekly .sig-checklist{grid-template-columns:1fr}#tarefas.sig-weekly .sig-week-top{align-items:flex-start;flex-direction:column}.main{min-width:0}}
+  @media(max-width:520px){#tarefas.sig-weekly .sig-check-row{grid-template-columns:28px minmax(0,1fr)}#tarefas.sig-weekly .sig-check-actions{grid-column:2;justify-content:flex-start}}
   `;
 
   function inicioSemana(d){
@@ -59,6 +63,7 @@
     if(!sec)return null;
     sec.classList.add('sig-weekly');
     if(!document.getElementById('sigTarefasSemanalStyle')){const st=document.createElement('style');st.id='sigTarefasSemanalStyle';st.textContent=css;document.head.appendChild(st);}
+    else document.getElementById('sigTarefasSemanalStyle').textContent=css;
     let wrap=document.getElementById('sigTarefasSemanal');
     if(!wrap){wrap=document.createElement('div');wrap.id='sigTarefasSemanal';wrap.className='sig-week-wrap';const table=sec.querySelector('.table');sec.insertBefore(wrap,table||null);}
     return wrap;
@@ -74,24 +79,22 @@
     const pct=tarefas.length?Math.round(concl/tarefas.length*100):0;
     wrap.innerHTML=`
       <div class="sig-week-top">
-        <div><div class="sig-week-title">Semana de ${fmtData(ini)} a ${fmtData(fim)}</div><div class="sig-week-sub">Organize suas tarefas por dia, acompanhe prioridades e conclua sua semana.</div></div>
+        <div><div class="sig-week-title">Semana de ${fmtData(ini)} a ${fmtData(fim)}</div><div class="sig-week-sub">Checklist semanal: marque as tarefas conforme forem sendo realizadas.</div></div>
         <div class="sig-week-nav"><button type="button" id="sigSemanaAnterior">← Semana anterior</button><button type="button" id="sigSemanaHoje">Semana atual</button><button type="button" id="sigSemanaProxima">Próxima semana →</button></div>
       </div>
       <div class="sig-week-stats"><div class="sig-stat"><b>${tarefas.length}</b><span>Tarefas da semana</span></div><div class="sig-stat"><b>${pend}</b><span>Pendentes</span></div><div class="sig-stat"><b>${concl}</b><span>Concluídas</span></div></div>
-      <div class="sig-week-days">${dias.map(d=>{
+      <div class="sig-checklist">${dias.map(d=>{
         const doDia=tarefas.filter(t=>mesmoDia(t.data_prevista,d));
-        return `<section class="sig-day ${mesmoDia(d,hoje)?'today':''}">
-          <div class="sig-day-head"><div class="sig-day-name">${cap(d.toLocaleDateString('pt-BR',{weekday:'long'}))}</div><div class="sig-day-date">${String(d.getDate()).padStart(2,'0')}</div><div class="sig-day-month">${d.toLocaleDateString('pt-BR',{month:'short',year:'numeric'})}</div></div>
-          ${doDia.length?doDia.map(t=>{
-            const done=t.status==='concluida';
-            return `<article class="sig-task-card ${done?'done':''}" onclick="editarTarefa('${t.id}')">
-              <button class="sig-task-check" type="button" title="${done?'Concluída':'Marcar como concluída'}" onclick="event.stopPropagation();${done?'':'done(\'tarefas\',\''+t.id+'\',\'concluida\')'}">${done?'✓':'○'}</button>
-              <div class="sig-task-title">${esc(t.titulo||'Tarefa')}</div>
-              <div class="sig-task-time">${hora(t.data_prevista)}${t.processo_id?' · '+esc(procNome(t.processo_id)):''}</div>
-              <span class="sig-task-prio ${esc(t.prioridade||'normal')}">${esc(t.prioridade||'normal')}</span>
-              <div class="sig-task-actions"><button type="button" class="secondary" onclick="event.stopPropagation();editarTarefa('${t.id}')">Editar</button>${done?'':`<button type="button" class="secondary" onclick="event.stopPropagation();done('tarefas','${t.id}','concluida')">Concluir</button>`}</div>
-            </article>`;
-          }).join(''):'<div class="sig-empty">Sem tarefas</div>'}
+        return `<section class="sig-day-list ${mesmoDia(d,hoje)?'today':''}">
+          <div class="sig-day-list-head"><div class="sig-day-label"><strong>${cap(d.toLocaleDateString('pt-BR',{weekday:'long'}))}</strong><span>${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}</span></div><div class="sig-day-count">${doDia.length} tarefa${doDia.length===1?'':'s'}</div></div>
+          <div class="sig-day-body">${doDia.length?doDia.map(t=>{
+            const feito=t.status==='concluida';
+            return `<div class="sig-check-row ${feito?'done':''}">
+              <button class="sig-box" type="button" title="${feito?'Concluída':'Marcar como concluída'}" onclick="${feito?'':'done(\'tarefas\',\''+t.id+'\',\'concluida\')'}">${feito?'✓':''}</button>
+              <div class="sig-check-main" onclick="editarTarefa('${t.id}')"><div class="sig-check-title">${esc(t.titulo||'Tarefa')}</div><div class="sig-check-meta">${hora(t.data_prevista)}${t.processo_id?' · '+esc(procNome(t.processo_id)):''}</div><div class="sig-check-tags"><span class="sig-tag-prio ${esc(t.prioridade||'normal')}">${esc(t.prioridade||'normal')}</span></div></div>
+              <div class="sig-check-actions"><button type="button" class="secondary" onclick="editarTarefa('${t.id}')">Editar</button></div>
+            </div>`;
+          }).join(''):'<div class="sig-empty">Sem tarefas para este dia</div>'}</div>
         </section>`;
       }).join('')}</div>
       <div class="sig-week-foot"><span>${pct}% da semana concluída</span><div class="sig-progress"><i style="width:${pct}%"></i></div><span>${concl}/${tarefas.length}</span></div>`;
