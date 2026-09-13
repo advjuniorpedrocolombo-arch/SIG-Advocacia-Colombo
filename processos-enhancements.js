@@ -21,9 +21,10 @@
         const toolbar=sec.querySelector('.toolbar');
         const box=document.createElement('div');
         box.style.cssText='display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0 14px';
-        box.innerHTML='<input id="buscaProcesso" type="search" placeholder="Buscar número do processo" style="width:min(360px,100%);margin:0"><button type="button" class="secondary" id="limparBuscaProcesso">Limpar</button><span id="contagemProcessos" class="small"></span>';
+        box.innerHTML='<input id="buscaProcesso" type="search" placeholder="Digite o número do processo" style="width:min(360px,100%);margin:0"><button type="button" class="primary" id="btnBuscarProcesso">Buscar processo</button><button type="button" class="secondary" id="limparBuscaProcesso">Limpar</button><span id="contagemProcessos" class="small"></span>';
         toolbar.insertAdjacentElement('afterend',box);
-        document.getElementById('buscaProcesso').addEventListener('input',renderProcessosAprimorados);
+        document.getElementById('btnBuscarProcesso').onclick=renderProcessosAprimorados;
+        document.getElementById('buscaProcesso').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();renderProcessosAprimorados();}});
         document.getElementById('limparBuscaProcesso').onclick=()=>{document.getElementById('buscaProcesso').value='';renderProcessosAprimorados();};
       }
     }
