@@ -12,14 +12,19 @@
     }
     function varaCodigo(n){n=norm(n);return n.length===20?n.slice(-4):null}
     function extrairNumeros(txt){
-      const texto=String(txt||'');
+      const texto=String(txt||'').replace(/\u00a0/g,' ');
       const candidatos=[];
-      const re=/\b\d{7}\s*[-.]?\s*\d{2}\s*[.]?\s*\d{4}\s*[.]?\s*5\s*[.]?\s*\d{2}\s*[.]?\s*\d{4}\b/g;
-      for(const m of texto.matchAll(re)){
-        const n=norm(m[0]);
-        if(n.length===20&&n[13]==='5')candidatos.push(n);
+      const padroes=[
+        /\d{7}-\d{2}\.\d{4}\.5\.\d{2}\.\d{4}/g,
+        /\d{20}/g
+      ];
+      for(const re of padroes){
+        for(const m of texto.matchAll(re)){
+          const n=norm(m[0]);
+          if(n.length===20&&n[13]==='5')candidatos.push(n);
+        }
       }
-      for(const linha of texto.split(/\r?\n/)){
+      for(const linha of texto.split(/[\r\n;,]+/)){
         const n=norm(linha);
         if(n.length===20&&n[13]==='5')candidatos.push(n);
       }
@@ -34,7 +39,7 @@
       modal.className='modal hidden';
       modal.innerHTML=`<div class="card" style="width:min(900px,100%);max-height:92vh;overflow:auto">
         <h3 style="margin-top:0">Importar processos trabalhistas</h3>
-        <p class="small">Use a consulta por OAB do tribunal para localizar seus processos e cole abaixo os números CNJ. O SIG identifica automaticamente o TRT, elimina duplicidades e mostra uma prévia antes da importação.</p>
+        <p class="small">Cole os números CNJ dos processos trabalhistas. O SIG identifica o TRT, elimina duplicidades e permite importar em lote.</p>
         <div class="formgrid">
           <div><label>OAB</label><input id="impTrabOab" value="510497" readonly style="background:#f2f4f7"></div>
           <div><label>UF</label><input id="impTrabUf" value="SP" readonly style="background:#f2f4f7"></div>
@@ -42,7 +47,7 @@
           <div style="display:flex;align-items:end"><button type="button" class="secondary" id="impTrabAbrirConsulta" style="width:100%;margin-bottom:12px">Abrir consulta por OAB ↗</button></div>
         </div>
         <label>Números dos processos trabalhistas</label>
-        <textarea id="impTrabLista" rows="8" placeholder="Cole aqui um ou vários números CNJ, um por linha.\nEx.: 0000000-00.2026.5.15.0108"></textarea>
+        <textarea id="impTrabLista" rows="8" placeholder="Cole aqui um ou vários números CNJ, um por linha.\nEx.: 1000151-46.2025.5.02.0242"></textarea>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
           <button type="button" class="secondary" id="impTrabPrever">Gerar prévia</button>
           <button type="button" class="secondary" id="impTrabSelecionarTodos">Selecionar todos</button>
@@ -54,7 +59,7 @@
         </div>
         <div class="actions">
           <button type="button" class="secondary" id="impTrabCancelar">Cancelar</button>
-          <button type="button" class="primary" id="impTrabImportar">Importar selecionados</button>
+          <button type="button" class="primary" id="impTrabImportar">Importar processos</button>
         </div>
       </div>`;
       document.body.appendChild(modal);
@@ -66,6 +71,7 @@
         window.open(url,'_blank','noopener');
       };
       document.getElementById('impTrabPrever').onclick=renderPreview;
+      document.getElementById('impTrabLista').oninput=()=>{document.getElementById('impTrabResumo').textContent='';};
       document.getElementById('impTrabSelecionarTodos').onclick=()=>document.querySelectorAll('#impTrabPreview input[type=checkbox]:not(:disabled)').forEach(x=>x.checked=true);
       document.getElementById('impTrabDesmarcarTodos').onclick=()=>document.querySelectorAll('#impTrabPreview input[type=checkbox]').forEach(x=>x.checked=false);
       document.getElementById('impTrabImportar').onclick=importarSelecionados;
@@ -75,18 +81,27 @@
       const nums=extrairNumeros(document.getElementById('impTrabLista').value);
       const ex=existentes();
       const tb=document.getElementById('impTrabPreview');
-      if(!nums.length){tb.innerHTML='';document.getElementById('impTrabResumo').textContent='Nenhum número CNJ trabalhista válido identificado.';return;}
+      if(!nums.length){tb.innerHTML='';document.getElementById('impTrabResumo').textContent='Nenhum número CNJ trabalhista válido identificado.';return [];}
       tb.innerHTML=nums.map(n=>{
         const trib=tribunalTrabalhista(n)||'—',dup=ex.has(n),vara=varaCodigo(n)||'—';
         return `<tr><td><input type="checkbox" class="impTrabCk" value="${n}" ${dup?'disabled':'checked'}></td><td>${fmt(n)}</td><td>${trib}</td><td>${vara}</td><td>${dup?'<span class="tag warn">Já cadastrado</span>':'<span class="tag ok">Novo</span>'}</td></tr>`;
       }).join('');
       const novos=nums.filter(n=>!ex.has(n)).length;
       document.getElementById('impTrabResumo').textContent=`${nums.length} processo(s) trabalhista(s) identificado(s) — ${novos} novo(s) e ${nums.length-novos} já cadastrado(s).`;
+      return nums;
     }
 
     async function importarSelecionados(){
-      const selecionados=[...document.querySelectorAll('#impTrabPreview .impTrabCk:checked')].map(x=>x.value);
-      if(!selecionados.length){alert('Selecione ao menos um processo novo para importar.');return;}
+      let nums=extrairNumeros(document.getElementById('impTrabLista').value);
+      if(!nums.length){alert('Nenhum número CNJ trabalhista válido foi identificado no campo.');return;}
+      const ex=existentes();
+      let selecionados=[...document.querySelectorAll('#impTrabPreview .impTrabCk:checked')].map(x=>x.value);
+      if(!selecionados.length){
+        selecionados=nums.filter(n=>!ex.has(n));
+      }
+      selecionados=[...new Set(selecionados)].filter(n=>!ex.has(n)&&tribunalTrabalhista(n));
+      if(!selecionados.length){alert('Todos os processos informados já estão cadastrados ou não são processos trabalhistas válidos.');return;}
+
       const btn=document.getElementById('impTrabImportar');
       const antigo=btn.textContent;btn.disabled=true;btn.textContent='Importando...';
       try{
@@ -101,20 +116,14 @@
         }));
         const {data:inseridos,error}=await sb.from('processos').insert(rows).select('id,numero_cnj,tribunal');
         if(error)throw error;
-        let atualizados=0,novas=0,erros=0;
-        btn.textContent='Atualizando movimentações...';
-        for(const p of (inseridos||[])){
-          try{
-            const {data,error:e}=await sb.functions.invoke('consultar-datajud',{body:{processo_id:p.id}});
-            if(e||data?.error){erros++;continue;}
-            atualizados++;novas+=Number(data?.novas||0);
-          }catch(_e){erros++;}
-        }
         await load();
         document.getElementById('mImportarTrabalhistasSIG').classList.add('hidden');
-        alert(`Importação trabalhista concluída.\n\nImportados: ${rows.length}\nAtualizados automaticamente: ${atualizados}\nNovas movimentações encontradas: ${novas}\nFalhas de atualização: ${erros}`);
-      }catch(e){alert('Não foi possível importar os processos trabalhistas: '+(e?.message||e));}
-      finally{btn.disabled=false;btn.textContent=antigo;}
+        alert(`Importação concluída.\n\n${rows.length} processo(s) trabalhista(s) importado(s) com sucesso.\n\nUse “Atualizar todos” para buscar as movimentações no DataJud.`);
+      }catch(e){
+        alert('Não foi possível importar os processos trabalhistas: '+(e?.message||e));
+      }finally{
+        btn.disabled=false;btn.textContent=antigo;
+      }
     }
 
     window.abrirImportadorTrabalhistaSIG=function(){
