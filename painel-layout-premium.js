@@ -1,26 +1,26 @@
 (()=>{
   const css=`
   #painel.sig-premium{font-family:Arial,sans-serif;color:#102c55}
-  #painel.sig-premium .sig-panel-hero{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;margin-bottom:18px;padding:4px 4px 0}
+  #painel.sig-premium .sig-panel-hero{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;margin-bottom:16px;padding:4px 4px 0}
   #painel.sig-premium .sig-panel-kicker{font-size:12px;letter-spacing:2px;color:#7b8aa0;text-transform:uppercase;margin-bottom:4px}
-  #painel.sig-premium .sig-panel-title{font-family:Georgia,serif;font-size:38px;line-height:1;margin:0;color:#102c55}
-  #painel.sig-premium .sig-panel-date{margin-top:10px;color:#53647b;font-size:14px}
+  #painel.sig-premium .sig-panel-title{font-family:Georgia,serif;font-size:36px;line-height:1;margin:0;color:#102c55}
+  #painel.sig-premium .sig-panel-date{margin-top:9px;color:#53647b;font-size:14px}
   #painel.sig-premium .sig-panel-brand{text-align:center;flex:1;max-width:640px;padding-top:8px}
-  #painel.sig-premium .sig-panel-brand h2{font-family:Georgia,serif;font-size:30px;letter-spacing:1px;margin:0;color:#102c55}
-  #painel.sig-premium .sig-gold-line{width:110px;height:2px;background:#c59a3d;margin:12px auto 8px}
+  #painel.sig-premium .sig-panel-brand h2{font-family:Georgia,serif;font-size:29px;letter-spacing:1px;margin:0;color:#102c55}
+  #painel.sig-premium .sig-gold-line{width:104px;height:2px;background:#c59a3d;margin:11px auto 8px}
   #painel.sig-premium .sig-panel-brand small{letter-spacing:5px;font-size:10px;color:#7890ad;text-transform:uppercase}
-  #painel.sig-premium .sig-oab-card{background:#eef4fb;border:1px solid #dce7f4;border-radius:999px;padding:10px 14px;font-weight:700;font-size:12px;white-space:nowrap;color:#173b72}
-  #painel.sig-premium .sig-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:18px}
-  #painel.sig-premium .sig-metric{position:relative;background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:18px 20px 16px;min-height:150px;box-shadow:0 8px 24px rgba(16,44,85,.055);overflow:hidden;cursor:pointer;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
-  #painel.sig-premium .sig-metric:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(16,44,85,.11);border-color:#cbd8e8}
+  #painel.sig-premium .sig-oab-card{background:#eef4fb;border:1px solid #dce7f4;border-radius:999px;padding:9px 13px;font-weight:700;font-size:12px;white-space:nowrap;color:#173b72}
+  #painel.sig-premium .sig-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
+  #painel.sig-premium .sig-metric{position:relative;background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:13px 15px 12px;min-height:116px;box-shadow:0 6px 18px rgba(16,44,85,.05);overflow:hidden;cursor:pointer;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
+  #painel.sig-premium .sig-metric:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(16,44,85,.10);border-color:#cbd8e8}
   #painel.sig-premium .sig-metric:focus{outline:3px solid rgba(23,59,114,.16);outline-offset:2px}
   #painel.sig-premium .sig-metric::after{content:'';position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--accent,#6aa5e8)}
-  #painel.sig-premium .sig-metric-top{display:flex;align-items:center;gap:12px}
-  #painel.sig-premium .sig-metric-icon{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;font-size:25px;background:var(--soft,#edf5ff);transition:transform .16s ease}
+  #painel.sig-premium .sig-metric-top{display:flex;align-items:center;gap:10px}
+  #painel.sig-premium .sig-metric-icon{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-size:20px;background:var(--soft,#edf5ff);transition:transform .16s ease;flex:0 0 auto}
   #painel.sig-premium .sig-metric:hover .sig-metric-icon{transform:scale(1.06)}
-  #painel.sig-premium .sig-metric-label{font-family:Georgia,serif;font-weight:700;font-size:17px;color:#102c55}
-  #painel.sig-premium .sig-metric-value{font-family:Georgia,serif;font-weight:700;font-size:46px;line-height:1;margin:12px 0 4px 66px;color:#071b45}
-  #painel.sig-premium .sig-metric-note{margin-left:66px;font-size:13px;color:#73849a}
+  #painel.sig-premium .sig-metric-label{font-family:Georgia,serif;font-weight:700;font-size:14px;line-height:1.15;color:#102c55}
+  #painel.sig-premium .sig-metric-value{font-family:Georgia,serif;font-weight:700;font-size:32px;line-height:1;margin:9px 0 2px 52px;color:#071b45}
+  #painel.sig-premium .sig-metric-note{margin-left:52px;font-size:11.5px;color:#73849a}
   #painel.sig-premium .sig-metric.proc{--accent:#69b7ff;--soft:#eaf4ff}
   #painel.sig-premium .sig-metric.cli{--accent:#70d0a2;--soft:#eaf9f1}
   #painel.sig-premium .sig-metric.pra{--accent:#f2b45b;--soft:#fff4e5}
@@ -58,6 +58,8 @@
 
   function montar(){
     const p=document.getElementById('painel');
+    const oabTopo=document.querySelector('.top .tag');
+    if(oabTopo)oabTopo.style.display='none';
     if(!p||p.dataset.premium==='1')return;
     p.dataset.premium='1';p.classList.add('sig-premium');
     if(!document.getElementById('sigPainelPremiumStyle')){
