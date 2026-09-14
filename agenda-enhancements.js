@@ -12,6 +12,17 @@
       return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
     }
 
+    function fmtAgendaComDia(v){
+      if(!v)return '—';
+      const d=new Date(v);
+      if(Number.isNaN(d.getTime()))return '—';
+      const dia=d.toLocaleDateString('pt-BR',{weekday:'long'});
+      const diaCap=dia.charAt(0).toUpperCase()+dia.slice(1);
+      const data=d.toLocaleDateString('pt-BR');
+      const hora=d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+      return `<strong>${esc(diaCap)}</strong> ${esc(data)} · ${esc(hora)}`;
+    }
+
     function garantirModalEditarAgenda(){
       if(document.getElementById('mEditarAgendaSIG'))return;
       const modal=document.createElement('div');
@@ -91,10 +102,10 @@
       const tb=document.getElementById('tbAgenda');
       if(!sec||!tb)return;
       const th=sec.querySelector('thead tr');
-      if(th)th.innerHTML='<th>Início</th><th>Tipo</th><th>Título</th><th>Local</th><th>Status</th><th>Ações</th>';
+      if(th)th.innerHTML='<th>Dia · Data/Hora</th><th>Tipo</th><th>Título</th><th>Local</th><th>Status</th><th>Ações</th>';
       tb.innerHTML=(D.agenda||[]).map(x=>{
         const tituloSeguro=String(x.titulo||'').replace(/'/g,'&#39;').replace(/"/g,'&quot;');
-        return `<tr><td>${fmt(x.inicio)}</td><td>${esc(x.tipo||'')}</td><td>${esc(x.titulo||'')}</td><td>${esc(x.local||'')}</td><td>${esc(x.status||'')}</td><td style="white-space:nowrap"><button type="button" class="secondary" onclick="editarAgendaSIG('${x.id}')">Editar</button> <button type="button" class="secondary" style="color:#b42318;margin-left:6px" onclick="excluirAgendaSIG('${x.id}','${tituloSeguro}')">Excluir</button></td></tr>`;
+        return `<tr><td style="white-space:nowrap">${fmtAgendaComDia(x.inicio)}</td><td>${esc(x.tipo||'')}</td><td>${esc(x.titulo||'')}</td><td>${esc(x.local||'')}</td><td>${esc(x.status||'')}</td><td style="white-space:nowrap"><button type="button" class="secondary" onclick="editarAgendaSIG('${x.id}')">Editar</button> <button type="button" class="secondary" style="color:#b42318;margin-left:6px" onclick="excluirAgendaSIG('${x.id}','${tituloSeguro}')">Excluir</button></td></tr>`;
       }).join('');
     }
 
