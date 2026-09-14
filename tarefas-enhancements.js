@@ -151,10 +151,65 @@
   const botaoNova=document.querySelector('#tarefas .toolbar button.primary');
   if(botaoNova)botaoNova.addEventListener('click',prepararModalNovaTarefa,true);
 
+  function rotuloStatus(status){
+    const s=String(status||'pendente').toLowerCase();
+    if(s==='em_andamento') return {texto:'Em andamento',classe:'em-andamento'};
+    if(s==='concluida'||s==='concluído'||s==='concluido') return {texto:'Concluída',classe:'concluida'};
+    if(s==='pendente') return {texto:'Pendente',classe:'pendente'};
+    return {texto:s.replaceAll('_',' ').replace(/^./,c=>c.toUpperCase()),classe:'outro'};
+  }
+
+  function garantirEstiloStatus(){
+    if(document.getElementById('sigTarefaStatusStyle')) return;
+    const st=document.createElement('style');
+    st.id='sigTarefaStatusStyle';
+    st.textContent=`
+      #tarefas.sig-weekly .sig-tag-status{padding:3px 7px;border-radius:999px;font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.02em;background:#f2f4f7;color:#475467;border:1px solid #e4e7ec}
+      #tarefas.sig-weekly .sig-tag-status.em-andamento{background:#eaf2fb;color:#175cd3;border-color:#bfd4f5}
+      #tarefas.sig-weekly .sig-tag-status.concluida{background:#dcfae6;color:#067647;border-color:#abefc6}
+      #tarefas.sig-weekly .sig-tag-status.pendente{background:#f2f4f7;color:#475467;border-color:#e4e7ec}
+      #tarefas.sig-weekly .sig-tag-status.outro{background:#f4f3ff;color:#5925dc;border-color:#d9d6fe}
+    `;
+    document.head.appendChild(st);
+  }
+
+  function aplicarStatusSemanal(){
+    garantirEstiloStatus();
+    const tarefas=((window.D||D)?.tarefas)||[];
+    document.querySelectorAll('#tarefas .sig-check-row[data-task-id]').forEach(row=>{
+      const tarefa=tarefas.find(t=>String(t.id)===String(row.dataset.taskId));
+      if(!tarefa) return;
+      const tags=row.querySelector('.sig-check-tags');
+      if(!tags) return;
+      const info=rotuloStatus(tarefa.status);
+      let badge=tags.querySelector('.sig-tag-status');
+      if(!badge){
+        badge=document.createElement('span');
+        badge.className='sig-tag-status';
+        tags.appendChild(badge);
+      }
+      const classe=`sig-tag-status ${info.classe}`;
+      if(badge.className!==classe) badge.className=classe;
+      if(badge.textContent!==info.texto) badge.textContent=info.texto;
+    });
+  }
+
+  const areaTarefas=document.getElementById('tarefas');
+  if(areaTarefas){
+    let pendente=false;
+    const observer=new MutationObserver(()=>{
+      if(pendente) return;
+      pendente=true;
+      requestAnimationFrame(()=>{pendente=false;aplicarStatusSemanal();});
+    });
+    observer.observe(areaTarefas,{childList:true,subtree:true});
+    aplicarStatusSemanal();
+  }
+
   if(!document.getElementById('sigTarefasSemanalLoader')){
     const s=document.createElement('script');
     s.id='sigTarefasSemanalLoader';
-    s.src='tarefas-layout-semanal.js?v=20260913-2330';
+    s.src='tarefas-layout-semanal.js?v=20260914-1205';
     document.body.appendChild(s);
   }
 })();
