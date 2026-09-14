@@ -16,6 +16,61 @@
     return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
 
+  function garantirBotaoEmAndamento(){
+    const form=document.getElementById('fTarefa');
+    if(!form) return null;
+    const actions=form.querySelector('.actions');
+    if(!actions) return null;
+    let btn=document.getElementById('btnTarefaEmAndamento');
+    if(!btn){
+      btn=document.createElement('button');
+      btn.type='button';
+      btn.id='btnTarefaEmAndamento';
+      btn.className='secondary';
+      btn.textContent='Em andamento';
+      btn.style.background='#eaf2fb';
+      btn.style.color='#173b72';
+      btn.style.fontWeight='700';
+      btn.style.display='none';
+      const cancelar=actions.querySelector('button[type="button"]');
+      actions.insertBefore(btn,cancelar||actions.firstChild);
+      btn.addEventListener('click',async()=>{
+        if(!tarefaEditandoId) return;
+        const tarefa=(window.D||D).tarefas.find(x=>x.id===tarefaEditandoId);
+        if(tarefa?.status==='em_andamento') return;
+        const textoOriginal=btn.textContent;
+        try{
+          btn.disabled=true;
+          btn.textContent='Atualizando...';
+          const {error}=await sb.from('tarefas').update({status:'em_andamento'}).eq('id',tarefaEditandoId);
+          if(error) throw error;
+          closeM('mTarefa');
+          tarefaEditandoId=null;
+          await load();
+        }catch(err){
+          alert('Não foi possível marcar a tarefa como em andamento: '+(err?.message||err));
+        }finally{
+          btn.disabled=false;
+          btn.textContent=textoOriginal;
+        }
+      });
+    }
+    return btn;
+  }
+
+  function atualizarBotaoEmAndamento(tarefa){
+    const btn=garantirBotaoEmAndamento();
+    if(!btn) return;
+    if(!tarefaEditandoId){
+      btn.style.display='none';
+      return;
+    }
+    btn.style.display='inline-block';
+    const emAndamento=tarefa?.status==='em_andamento';
+    btn.disabled=emAndamento;
+    btn.textContent=emAndamento?'Em andamento ✓':'Em andamento';
+  }
+
   function prepararModalNovaTarefa(){
     tarefaEditandoId=null;
     const form=document.getElementById('fTarefa');
@@ -26,6 +81,7 @@
     if(titulo) titulo.textContent='Nova tarefa';
     const salvar=form.querySelector('button[type="submit"],button.primary');
     if(salvar) salvar.textContent='Salvar';
+    atualizarBotaoEmAndamento(null);
   }
 
   window.editarTarefa=function(id){
@@ -44,6 +100,7 @@
     if(titulo) titulo.textContent='Editar tarefa';
     const salvar=form.querySelector('button[type="submit"],button.primary');
     if(salvar) salvar.textContent='Salvar alterações';
+    atualizarBotaoEmAndamento(tarefa);
     openM('mTarefa');
   };
 
@@ -67,6 +124,7 @@
 
   const form=document.getElementById('fTarefa');
   if(form){
+    garantirBotaoEmAndamento();
     form.onsubmit=async e=>{
       e.preventDefault();
       const btn=form.querySelector('button[type="submit"],button.primary');
@@ -83,6 +141,7 @@
         }
         e.target.reset();closeM('mTarefa');tarefaEditandoId=null;
         const titulo=document.querySelector('#mTarefa h3');if(titulo) titulo.textContent='Nova tarefa';
+        atualizarBotaoEmAndamento(null);
         await load();
       }catch(err){alert('Não foi possível salvar a tarefa: '+(err?.message||err));}
       finally{if(btn){btn.disabled=false;btn.textContent=tarefaEditandoId?'Salvar alterações':'Salvar';}}
