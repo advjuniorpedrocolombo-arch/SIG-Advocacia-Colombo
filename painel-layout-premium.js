@@ -10,7 +10,7 @@
   #painel.sig-premium .sig-gold-line{width:104px;height:2px;background:#c59a3d;margin:11px auto 8px}
   #painel.sig-premium .sig-panel-brand small{letter-spacing:5px;font-size:10px;color:#7890ad;text-transform:uppercase}
   #painel.sig-premium .sig-oab-card{background:#eef4fb;border:1px solid #dce7f4;border-radius:999px;padding:9px 13px;font-weight:700;font-size:12px;white-space:nowrap;color:#173b72}
-  #painel.sig-premium .sig-metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:16px}
+  #painel.sig-premium .sig-metrics{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:16px}
   #painel.sig-premium .sig-metric{position:relative;background:#fff;border:1px solid #e2e8f0;border-radius:15px;padding:11px 12px 10px;min-height:108px;box-shadow:0 6px 18px rgba(16,44,85,.05);overflow:hidden;cursor:pointer;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease;min-width:0}
   #painel.sig-premium .sig-metric:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(16,44,85,.10);border-color:#cbd8e8}
   #painel.sig-premium .sig-metric:focus{outline:3px solid rgba(23,59,114,.16);outline-offset:2px}
@@ -25,6 +25,7 @@
   #painel.sig-premium .sig-metric.cli{--accent:#70d0a2;--soft:#eaf9f1}
   #painel.sig-premium .sig-metric.pra{--accent:#f2b45b;--soft:#fff4e5}
   #painel.sig-premium .sig-metric.tar{--accent:#9b7cf0;--soft:#f2edff}
+  #painel.sig-premium .sig-metric.agd{--accent:#5f8fe8;--soft:#edf4ff}
   #painel.sig-premium .sig-metric.ate{--accent:#c59a3d;--soft:#fff8e7}
   #painel.sig-premium .sig-upcoming{background:#fff;border:1px solid #e2e8f0;border-radius:20px;padding:0;overflow:hidden;box-shadow:0 8px 24px rgba(16,44,85,.05)}
   #painel.sig-premium .sig-up-head{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid #e8edf3}
@@ -39,7 +40,7 @@
   #painel.sig-premium #resumo p b{font-family:Georgia,serif;font-size:16px;color:#102c55}
   #painel.sig-premium .sig-jesus{display:flex;justify-content:flex-end;align-items:center;gap:12px;margin:18px 4px 0;color:#7a8798;font-family:Georgia,serif;font-style:italic;font-size:13px}
   #painel.sig-premium .sig-jesus::before{content:'';width:40px;height:1px;background:#c59a3d}
-  @media(max-width:1150px){#painel.sig-premium .sig-metrics{grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}#painel.sig-premium .sig-metric{padding:10px;min-height:103px}#painel.sig-premium .sig-metric-icon{width:34px;height:34px;font-size:17px}#painel.sig-premium .sig-metric-label{font-size:12px}#painel.sig-premium .sig-metric-value{font-size:27px;margin-left:42px}#painel.sig-premium .sig-metric-note{margin-left:42px;font-size:10px}}
+  @media(max-width:1220px){#painel.sig-premium .sig-metrics{grid-template-columns:repeat(3,1fr)}}
   @media(max-width:930px){#painel.sig-premium .sig-metrics{grid-template-columns:repeat(2,1fr)}#painel.sig-premium .sig-panel-brand{display:none}}
   @media(max-width:650px){#painel.sig-premium .sig-metrics{grid-template-columns:1fr}#painel.sig-premium .sig-panel-title{font-size:30px}#painel.sig-premium .sig-oab-card{display:none}#painel.sig-premium #resumo p{grid-template-columns:1fr;gap:4px}#painel.sig-premium .sig-up-head{align-items:flex-start;gap:10px}.sig-link-agenda{display:none}}
   `;
@@ -62,6 +63,7 @@
         <div class="sig-metric cli" data-destino="clientes" role="button" tabindex="0"><div class="sig-metric-top"><div class="sig-metric-icon">👥</div><div class="sig-metric-label">Clientes ativos</div></div><div class="sig-metric-value" id="mcli">0</div><div class="sig-metric-note">Carteira de clientes</div></div>
         <div class="sig-metric pra" data-destino="prazos" role="button" tabindex="0"><div class="sig-metric-top"><div class="sig-metric-icon">🗓</div><div class="sig-metric-label">Prazos pendentes</div></div><div class="sig-metric-value" id="mpra">0</div><div class="sig-metric-note">A vencer</div></div>
         <div class="sig-metric tar" data-destino="tarefas" role="button" tabindex="0"><div class="sig-metric-top"><div class="sig-metric-icon">☑</div><div class="sig-metric-label">Tarefas pendentes</div></div><div class="sig-metric-value" id="mtar">0</div><div class="sig-metric-note">Suas atividades</div></div>
+        <div class="sig-metric agd" data-destino="agenda" role="button" tabindex="0"><div class="sig-metric-top"><div class="sig-metric-icon">📅</div><div class="sig-metric-label">Agenda</div></div><div class="sig-metric-value" id="magd">0</div><div class="sig-metric-note">Próximos compromissos</div></div>
         <div class="sig-metric ate" data-destino="atendimentos" role="button" tabindex="0"><div class="sig-metric-top"><div class="sig-metric-icon">💬</div><div class="sig-metric-label">Atendimentos</div></div><div class="sig-metric-value" id="mate">0</div><div class="sig-metric-note">Em acompanhamento</div></div>
       </div>
       <div class="sig-upcoming"><div class="sig-up-head"><div class="sig-up-title"><div class="sig-up-icon">▣</div><div><h3>Próximos compromissos</h3><p>Seus próximos eventos e audiências</p></div></div><button class="sig-link-agenda" type="button" id="sigIrAgenda">Ver agenda completa →</button></div><div id="resumo"></div></div>
@@ -87,11 +89,12 @@
 
   function atualizarNumeros(){
     if(typeof D==='undefined')return;
-    const a=document.getElementById('mproc'),b=document.getElementById('mcli'),c=document.getElementById('mpra'),d=document.getElementById('mtar');
+    const a=document.getElementById('mproc'),b=document.getElementById('mcli'),c=document.getElementById('mpra'),d=document.getElementById('mtar'),e=document.getElementById('magd');
     if(a)a.textContent=(D.processos||[]).filter(x=>x.status==='ativo').length;
     if(b)b.textContent=(D.clientes||[]).filter(x=>x.ativo!==false).length;
     if(c)c.textContent=(D.prazos||[]).filter(x=>['pendente','em_andamento'].includes(x.status)).length;
     if(d)d.textContent=(D.tarefas||[]).filter(x=>['pendente','em_andamento'].includes(x.status)).length;
+    if(e)e.textContent=(D.agenda||[]).filter(x=>x.inicio&&new Date(x.inicio)>=new Date()&&String(x.status||'').toLowerCase()!=='cancelado').length;
     atualizarAtendimentos();
   }
 
