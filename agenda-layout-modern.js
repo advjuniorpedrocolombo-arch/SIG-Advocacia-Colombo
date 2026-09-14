@@ -31,6 +31,7 @@
       #agenda tbody tr:hover{background:#fbfdff}
       #agenda td:nth-child(1){font-weight:700;white-space:nowrap}
       #agenda td:nth-child(3){font-weight:700}
+      #agenda .sig-dia-semana{color:#173b72;margin-right:5px}
       #agenda .sig-tipo,#agenda .sig-status{display:inline-flex;align-items:center;padding:5px 10px;border-radius:999px;font-weight:700;font-size:12px;white-space:nowrap}
       #agenda .sig-tipo{background:#eaf8f0;color:#087443}
       #agenda .sig-tipo.compromisso{background:#eaf2ff;color:#0b63e5}
@@ -49,7 +50,9 @@
     if(!v) return '—';
     const d=new Date(v);
     if(Number.isNaN(d.getTime())) return '—';
-    return d.toLocaleDateString('pt-BR')+' · '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    const dia=d.toLocaleDateString('pt-BR',{weekday:'long'});
+    const diaFmt=dia.charAt(0).toUpperCase()+dia.slice(1);
+    return `<span class="sig-dia-semana">${diaFmt}</span> ${d.toLocaleDateString('pt-BR')} · ${d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`;
   }
 
   function normal(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()}
@@ -95,7 +98,7 @@
     const deHoje=lista.filter(x=>x.inicio&&new Date(x.inicio).toLocaleDateString('pt-BR')===hoje);
     const passados=lista.filter(x=>x.inicio&&new Date(x.inicio)<agora);
     const prox=[...futuros].sort((a,b)=>new Date(a.inicio)-new Date(b.inicio))[0];
-    const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
+    const set=(id,v)=>{const el=document.getElementById(id);if(el)el.innerHTML=v};
     set('sigAgTotal',futuros.length);
     set('sigAgHoje',deHoje.length);
     set('sigAgPassados',passados.length);
@@ -115,7 +118,7 @@
       return (!q||texto.includes(q))&&(!filtroTipo||normal(x.tipo)===normal(filtroTipo))&&(!filtroStatus||normal(x.status)===normal(filtroStatus));
     });
     const th=sec.querySelector('thead tr');
-    if(th) th.innerHTML='<th>Data/Hora</th><th>Tipo</th><th>Título</th><th>Local</th><th>Status</th><th>Ações</th>';
+    if(th) th.innerHTML='<th>Dia · Data/Hora</th><th>Tipo</th><th>Título</th><th>Local</th><th>Status</th><th>Ações</th>';
     if(!lista.length){tb.innerHTML='<tr><td colspan="6" class="sig-empty">Nenhum compromisso encontrado.</td></tr>';return;}
     tb.innerHTML=lista.map(x=>{
       const tipo=normal(x.tipo);
