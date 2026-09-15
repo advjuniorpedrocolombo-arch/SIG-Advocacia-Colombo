@@ -72,6 +72,32 @@
       };
     }
 
+    function garantirAreaArquivados(){
+      const sec=document.getElementById('agenda');
+      if(!sec)return;
+      const toolbar=sec.querySelector('.toolbar');
+      if(toolbar&&!document.getElementById('btnArquivarPassadosSIG')){
+        const box=document.createElement('div');
+        box.style.cssText='display:flex;gap:8px;flex-wrap:wrap;align-items:center';
+        const novo=toolbar.querySelector('button.primary');
+        if(novo)box.appendChild(novo);
+        const btn=document.createElement('button');
+        btn.type='button';btn.id='btnArquivarPassadosSIG';btn.className='secondary';
+        btn.textContent='📦 Arquivar compromissos passados';
+        btn.onclick=arquivarPassadosAgendaSIG;
+        box.appendChild(btn);
+        toolbar.appendChild(box);
+      }
+      if(!document.getElementById('agendaArquivadosSIG')){
+        const d=document.createElement('details');
+        d.id='agendaArquivadosSIG';
+        d.style.marginTop='14px';
+        d.innerHTML=`<summary style="cursor:pointer;font-weight:700;color:#173b72">📦 Compromissos arquivados <span id="agendaArquivadosQtdSIG">(0)</span></summary>
+          <div class="table" style="margin-top:10px"><table><thead><tr><th>Dia · Data/Hora</th><th>Tipo</th><th>Título</th><th>Local</th><th>Ações</th></tr></thead><tbody id="tbAgendaArquivadosSIG"></tbody></table></div>`;
+        sec.appendChild(d);
+      }
+    }
+
     window.editarAgendaSIG=function(id){
       garantirModalEditarAgenda();
       const a=(D.agenda||[]).find(x=>x.id===id);
@@ -97,19 +123,52 @@
       alert('Compromisso excluído com sucesso.');
     };
 
+    window.arquivarAgendaSIG=async function(id,titulo){
+      if(!confirm(`Arquivar o compromisso "${titulo||'sem título'}"?\n\nEle sairá da agenda ativa, mas continuará disponível em Compromissos arquivados.`))return;
+      const {error}=await sb.from('eventos_agenda').update({status:'arquivado'}).eq('id',id);
+      if(error){alert('Não foi possível arquivar o compromisso: '+error.message);return;}
+      await load();
+    };
+
+    window.restaurarAgendaSIG=async function(id){
+      const {error}=await sb.from('eventos_agenda').update({status:'agendado'}).eq('id',id);
+      if(error){alert('Não foi possível restaurar o compromisso: '+error.message);return;}
+      await load();
+    };
+
+    window.arquivarPassadosAgendaSIG=async function(){
+      const agora=new Date();
+      const passados=(D.agenda||[]).filter(x=>x.status!=='arquivado'&&x.inicio&&new Date(x.inicio)<agora);
+      if(!passados.length){alert('Não há compromissos passados para arquivar.');return;}
+      if(!confirm(`Arquivar ${passados.length} compromisso(s) cuja data já passou?\n\nNenhum registro será excluído.`))return;
+      const ids=passados.map(x=>x.id);
+      const {error}=await sb.from('eventos_agenda').update({status:'arquivado'}).in('id',ids);
+      if(error){alert('Não foi possível arquivar os compromissos: '+error.message);return;}
+      await load();
+      alert(`${passados.length} compromisso(s) arquivado(s) com sucesso.`);
+    };
+
     function renderAgendaAprimorada(){
       const sec=document.getElementById('agenda');
       const tb=document.getElementById('tbAgenda');
       if(!sec||!tb)return;
+      garantirAreaArquivados();
       const th=sec.querySelector('thead tr');
       if(th)th.innerHTML='<th>Dia · Data/Hora</th><th>Tipo</th><th>Título</th><th>Local</th><th>Status</th><th>Ações</th>';
-      tb.innerHTML=(D.agenda||[]).map(x=>{
+      const ativos=(D.agenda||[]).filter(x=>x.status!=='arquivado');
+      tb.innerHTML=ativos.map(x=>{
         const tituloSeguro=String(x.titulo||'').replace(/'/g,'&#39;').replace(/"/g,'&quot;');
-        return `<tr><td style="white-space:nowrap">${fmtAgendaComDia(x.inicio)}</td><td>${esc(x.tipo||'')}</td><td>${esc(x.titulo||'')}</td><td>${esc(x.local||'')}</td><td>${esc(x.status||'')}</td><td style="white-space:nowrap"><button type="button" class="secondary" onclick="editarAgendaSIG('${x.id}')">Editar</button> <button type="button" class="secondary" style="color:#b42318;margin-left:6px" onclick="excluirAgendaSIG('${x.id}','${tituloSeguro}')">Excluir</button></td></tr>`;
-      }).join('');
+        return `<tr><td style="white-space:nowrap">${fmtAgendaComDia(x.inicio)}</td><td>${esc(x.tipo||'')}</td><td>${esc(x.titulo||'')}</td><td>${esc(x.local||'')}</td><td>${esc(x.status||'')}</td><td style="white-space:nowrap"><button type="button" class="secondary" onclick="editarAgendaSIG('${x.id}')">Editar</button> <button type="button" class="secondary" style="margin-left:6px" onclick="arquivarAgendaSIG('${x.id}','${tituloSeguro}')">📦 Arquivar</button> <button type="button" class="secondary" style="color:#b42318;margin-left:6px" onclick="excluirAgendaSIG('${x.id}','${tituloSeguro}')">Excluir</button></td></tr>`;
+      }).join('')||'<tr><td colspan="6" style="text-align:center;color:#667085">Nenhum compromisso ativo.</td></tr>';
+
+      const arquivados=(D.agenda||[]).filter(x=>x.status==='arquivado');
+      const qtd=document.getElementById('agendaArquivadosQtdSIG');if(qtd)qtd.textContent=`(${arquivados.length})`;
+      const tba=document.getElementById('tbAgendaArquivadosSIG');
+      if(tba)tba.innerHTML=arquivados.map(x=>`<tr><td style="white-space:nowrap">${fmtAgendaComDia(x.inicio)}</td><td>${esc(x.tipo||'')}</td><td>${esc(x.titulo||'')}</td><td>${esc(x.local||'')}</td><td><button type="button" class="secondary" onclick="restaurarAgendaSIG('${x.id}')">↩ Restaurar</button></td></tr>`).join('')||'<tr><td colspan="5" style="text-align:center;color:#667085">Nenhum compromisso arquivado.</td></tr>';
     }
 
     garantirModalEditarAgenda();
+    garantirAreaArquivados();
     const original=render;
     render=function(){original();renderAgendaAprimorada();};
     renderAgendaAprimorada();
