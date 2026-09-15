@@ -209,7 +209,7 @@
   if(!document.getElementById('sigTarefasSemanalLoader')){
     const s=document.createElement('script');
     s.id='sigTarefasSemanalLoader';
-    s.src='tarefas-layout-semanal.js?v=20260915-0100';
+    s.src='tarefas-layout-semanal.js?v=20260915-1930';
     document.body.appendChild(s);
   }
 })();

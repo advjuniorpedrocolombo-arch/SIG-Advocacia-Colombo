@@ -26,7 +26,9 @@
   #tarefas.sig-weekly .sig-day-count{font-size:10px;font-weight:700;color:#173b72;background:#eaf2fb;border-radius:999px;padding:4px 7px}
   #tarefas.sig-weekly .sig-add-day{width:26px;height:26px;border-radius:8px;border:1px solid #cbd9ea;background:#fff;color:#173b72;font-size:18px;line-height:1;padding:0;cursor:pointer;font-weight:800}
   #tarefas.sig-weekly .sig-day-body{padding:8px 10px;min-height:64px}
-  #tarefas.sig-weekly .sig-day-body.drag-zone{background:#f7fbff}
+  #tarefas.sig-weekly .sig-day-body.drag-zone{background:#edf6ff;box-shadow:inset 0 0 0 2px #6aa2dc;border-radius:10px}
+  #tarefas.sig-weekly .sig-day-body.drag-zone .sig-empty{display:none}
+  #tarefas.sig-weekly .sig-day-body.drag-saving{opacity:.65;pointer-events:none}
   #tarefas.sig-weekly .sig-check-row{display:grid;grid-template-columns:26px 30px minmax(0,1fr) auto;gap:8px;align-items:center;padding:9px 4px;border-bottom:1px solid #edf1f5}
   #tarefas.sig-weekly .sig-check-row:last-child{border-bottom:0}
   #tarefas.sig-weekly .sig-check-row.dragging{opacity:.35;background:#edf5ff}
@@ -63,6 +65,23 @@
   function ordemKey(chave){return `sig-tarefas-ordem:${chave}`}
   function lerOrdem(chave){try{return JSON.parse(localStorage.getItem(ordemKey(chave))||'[]').map(String)}catch(_){return []}}
   function salvarOrdem(chave,ids){localStorage.setItem(ordemKey(chave),JSON.stringify(ids.map(String)))}
+  function dataTarefaNoDia(dataAtual,chave){
+    const atual=new Date(dataAtual);
+    const partes=String(chave||'').split('-').map(Number);
+    if(Number.isNaN(atual.getTime())||partes.length!==3||partes.some(Number.isNaN))throw new Error('Não foi possível interpretar a nova data.');
+    const nova=new Date(partes[0],partes[1]-1,partes[2],atual.getHours(),atual.getMinutes(),atual.getSeconds(),atual.getMilliseconds());
+    if(Number.isNaN(nova.getTime()))throw new Error('A nova data é inválida.');
+    return nova.toISOString();
+  }
+  async function moverTarefaParaDia(id,novaChave){
+    const dados=window.D||D;
+    const tarefa=(dados.tarefas||[]).find(t=>String(t.id)===String(id));
+    if(!tarefa)throw new Error('Tarefa não localizada.');
+    const novaData=dataTarefaNoDia(tarefa.data_prevista,novaChave);
+    const {error}=await sb.from('tarefas').update({data_prevista:novaData}).eq('id',id);
+    if(error)throw error;
+    tarefa.data_prevista=novaData;
+  }
   function ordenarManual(lista,chave){
     const ordem=lerOrdem(chave);
     const pos=new Map(ordem.map((id,i)=>[id,i]));
@@ -101,7 +120,7 @@
       });
       row.addEventListener('dragend',()=>{
         row.classList.remove('dragging');
-        wrap.querySelectorAll('.sig-day-body').forEach(x=>x.classList.remove('drag-zone'));
+        wrap.querySelectorAll('.sig-day-body').forEach(x=>x.classList.remove('drag-zone','drag-saving'));
         arrastando=null;
       });
     });
@@ -109,18 +128,36 @@
     wrap.querySelectorAll('.sig-day-list[data-date]').forEach(day=>{
       const body=day.querySelector('.sig-day-body');
       body.addEventListener('dragover',e=>{
-        if(!arrastando||arrastando.chave!==day.dataset.date)return;
+        if(!arrastando)return;
         e.preventDefault();
+        e.dataTransfer.dropEffect='move';
+        wrap.querySelectorAll('.sig-day-body').forEach(x=>{if(x!==body)x.classList.remove('drag-zone')});
         body.classList.add('drag-zone');
         const candidatos=[...body.querySelectorAll('.sig-check-row:not(.dragging)')];
         const alvo=candidatos.find(el=>e.clientY<el.getBoundingClientRect().top+el.getBoundingClientRect().height/2);
         if(alvo)body.insertBefore(arrastando.row,alvo);else body.appendChild(arrastando.row);
       });
-      body.addEventListener('drop',e=>{
-        if(!arrastando||arrastando.chave!==day.dataset.date)return;
+      body.addEventListener('drop',async e=>{
+        if(!arrastando)return;
         e.preventDefault();
+        const movimento={id:arrastando.id,chaveOrigem:arrastando.chave,row:arrastando.row};
+        const chaveDestino=day.dataset.date;
         body.classList.remove('drag-zone');
-        salvarOrdem(day.dataset.date,[...body.querySelectorAll('.sig-check-row')].map(x=>x.dataset.taskId));
+        body.querySelector('.sig-empty')?.remove();
+        const ordemDestino=[...body.querySelectorAll('.sig-check-row')].map(x=>x.dataset.taskId);
+        salvarOrdem(chaveDestino,ordemDestino);
+        if(movimento.chaveOrigem===chaveDestino)return;
+        body.classList.add('drag-saving');
+        try{
+          await moverTarefaParaDia(movimento.id,chaveDestino);
+          salvarOrdem(movimento.chaveOrigem,lerOrdem(movimento.chaveOrigem).filter(id=>id!==String(movimento.id)));
+          if(typeof load==='function')await load();else renderSemanal();
+        }catch(err){
+          alert('Não foi possível mover a tarefa para a nova data: '+(err?.message||err));
+          renderSemanal();
+        }finally{
+          body.classList.remove('drag-saving');
+        }
       });
     });
   }
@@ -134,9 +171,9 @@
     const dias=Array.from({length:7},(_,i)=>{const d=new Date(ini);d.setDate(ini.getDate()+i);return d});
     const pct=tarefas.length?Math.round(concl/tarefas.length*100):0;
     wrap.innerHTML=`
-      <div class="sig-week-top"><div><div class="sig-week-title">Semana de ${fmtData(ini)} a ${fmtData(fim)}</div><div class="sig-week-sub">Arraste as tarefas pela alça ⋮⋮ para organizar a ordem dentro de cada dia.</div></div><div class="sig-week-nav"><button type="button" id="sigSemanaAnterior">← Semana anterior</button><button type="button" id="sigSemanaHoje">Semana atual</button><button type="button" id="sigSemanaProxima">Próxima semana →</button></div></div>
+      <div class="sig-week-top"><div><div class="sig-week-title">Semana de ${fmtData(ini)} a ${fmtData(fim)}</div><div class="sig-week-sub">Arraste as tarefas pela alça ⋮⋮ para reorganizar ou mudar a data. O horário será mantido.</div></div><div class="sig-week-nav"><button type="button" id="sigSemanaAnterior">← Semana anterior</button><button type="button" id="sigSemanaHoje">Semana atual</button><button type="button" id="sigSemanaProxima">Próxima semana →</button></div></div>
       <div class="sig-week-stats"><div class="sig-stat"><b>${tarefas.length}</b><span>Tarefas da semana</span></div><div class="sig-stat"><b>${pend}</b><span>Pendentes</span></div><div class="sig-stat"><b>${concl}</b><span>Concluídas</span></div></div>
-      <div class="sig-checklist">${dias.map(d=>{const chave=chaveDia(d);const doDia=ordenarManual(tarefas.filter(t=>mesmoDia(t.data_prevista,d)),chave);return `<section class="sig-day-list ${mesmoDia(d,hoje)?'today':''}" data-date="${chave}"><div class="sig-day-list-head"><div class="sig-day-label"><strong>${cap(d.toLocaleDateString('pt-BR',{weekday:'long'}))}</strong><span>${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}</span></div><div class="sig-day-tools"><div class="sig-day-count">${doDia.length} tarefa${doDia.length===1?'':'s'}</div><button class="sig-add-day" type="button" title="Nova tarefa neste dia" data-add-date="${chave}">+</button></div></div><div class="sig-day-body">${doDia.length?doDia.map(t=>{const feito=t.status==='concluida';const prio=String(t.prioridade||'normal').toLowerCase();return `<div class="sig-check-row ${feito?'done':''}" draggable="true" data-task-id="${t.id}"><div class="sig-drag-handle" title="Arraste para reorganizar">⋮⋮</div><button class="sig-box" type="button" title="${feito?'Voltar para pendente':'Marcar como concluída'}" onclick="done('tarefas','${t.id}','${feito?'pendente':'concluida'}')">${feito?'✓':''}</button><div class="sig-check-main" onclick="editarTarefa('${t.id}')"><div class="sig-check-title">${esc(t.titulo||'Tarefa')}</div><div class="sig-check-meta">${hora(t.data_prevista)}${t.processo_id?' · '+esc(procNome(t.processo_id)):''}</div><div class="sig-check-tags"><span class="sig-tag-prio ${esc(prio)}">${esc(prio)}</span></div></div><div class="sig-check-actions"><button type="button" class="secondary" onclick="editarTarefa('${t.id}')">Editar</button></div></div>`}).join(''):'<div class="sig-empty">Sem tarefas para este dia</div>'}</div></section>`}).join('')}</div>
+      <div class="sig-checklist">${dias.map(d=>{const chave=chaveDia(d);const doDia=ordenarManual(tarefas.filter(t=>mesmoDia(t.data_prevista,d)),chave);return `<section class="sig-day-list ${mesmoDia(d,hoje)?'today':''}" data-date="${chave}"><div class="sig-day-list-head"><div class="sig-day-label"><strong>${cap(d.toLocaleDateString('pt-BR',{weekday:'long'}))}</strong><span>${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}</span></div><div class="sig-day-tools"><div class="sig-day-count">${doDia.length} tarefa${doDia.length===1?'':'s'}</div><button class="sig-add-day" type="button" title="Nova tarefa neste dia" data-add-date="${chave}">+</button></div></div><div class="sig-day-body">${doDia.length?doDia.map(t=>{const feito=t.status==='concluida';const prio=String(t.prioridade||'normal').toLowerCase();return `<div class="sig-check-row ${feito?'done':''}" draggable="true" data-task-id="${t.id}"><div class="sig-drag-handle" title="Arraste para reorganizar ou mudar de data">⋮⋮</div><button class="sig-box" type="button" title="${feito?'Voltar para pendente':'Marcar como concluída'}" onclick="done('tarefas','${t.id}','${feito?'pendente':'concluida'}')">${feito?'✓':''}</button><div class="sig-check-main" onclick="editarTarefa('${t.id}')"><div class="sig-check-title">${esc(t.titulo||'Tarefa')}</div><div class="sig-check-meta">${hora(t.data_prevista)}${t.processo_id?' · '+esc(procNome(t.processo_id)):''}</div><div class="sig-check-tags"><span class="sig-tag-prio ${esc(prio)}">${esc(prio)}</span></div></div><div class="sig-check-actions"><button type="button" class="secondary" onclick="editarTarefa('${t.id}')">Editar</button></div></div>`}).join(''):'<div class="sig-empty">Sem tarefas para este dia</div>'}</div></section>`}).join('')}</div>
       <div class="sig-week-foot"><span>${pct}% da semana concluída</span><div class="sig-progress"><i style="width:${pct}%"></i></div><span>${concl}/${tarefas.length}</span></div>`;
     document.getElementById('sigSemanaAnterior').onclick=()=>{semanaBase.setDate(semanaBase.getDate()-7);renderSemanal()};
     document.getElementById('sigSemanaHoje').onclick=()=>{semanaBase=inicioSemana(new Date());renderSemanal()};
