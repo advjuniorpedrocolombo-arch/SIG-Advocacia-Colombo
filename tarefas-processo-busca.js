@@ -10,7 +10,7 @@
     return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
   }
   function soDigitos(v){return String(v||'').replace(/\D/g,'');}
-  function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));}
 
   function clienteDoProcesso(p){
     const c=(D.clientes||[]).find(x=>String(x.id)===String(p.cliente_id));
@@ -26,13 +26,48 @@
     const bloco=sel.closest('div')||sel.parentElement;
     if(!bloco)return;
 
+    const acoes=document.createElement('div');
+    acoes.style.cssText='display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;margin-top:-4px;margin-bottom:10px';
+    bloco.appendChild(acoes);
+
     const btn=document.createElement('button');
     btn.type='button';
     btn.className='secondary';
     btn.id='btnBuscarProcessoTarefa';
     btn.textContent='Procurar processo / cliente';
-    btn.style.cssText='margin-top:-4px;margin-bottom:10px;width:100%;font-weight:700';
-    bloco.appendChild(btn);
+    btn.style.cssText='width:100%;font-weight:700';
+    acoes.appendChild(btn);
+
+    const btnTribunal=document.createElement('button');
+    btnTribunal.type='button';
+    btnTribunal.className='secondary';
+    btnTribunal.id='btnTribunalTarefa';
+    btnTribunal.textContent='Tribunal ↗';
+    btnTribunal.title='Abrir o processo vinculado no tribunal';
+    btnTribunal.style.cssText='font-weight:700;white-space:nowrap;display:none';
+    acoes.appendChild(btnTribunal);
+
+    function processoSelecionado(){
+      return (D.processos||[]).find(p=>String(p.id)===String(sel.value||''));
+    }
+
+    function atualizarBotaoTribunal(){
+      const p=processoSelecionado();
+      const habilitado=!!(p&&p.numero_cnj);
+      btnTribunal.style.display=habilitado?'inline-block':'none';
+      btnTribunal.disabled=!habilitado;
+      btnTribunal.dataset.processoId=habilitado?String(p.id):'';
+    }
+
+    btnTribunal.onclick=()=>{
+      const p=processoSelecionado();
+      if(!p){alert('Selecione ou vincule um processo primeiro.');return;}
+      if(typeof abrirProcessoTribunal==='function'){
+        abrirProcessoTribunal(p.id);
+      }else{
+        alert('O atalho do tribunal ainda não está disponível nesta tela.');
+      }
+    };
 
     const painel=document.createElement('div');
     painel.id='painelBuscaProcessoTarefa';
@@ -78,10 +113,12 @@
             if(p){opt=document.createElement('option');opt.value=p.id;opt.textContent=p.titulo||p.numero_cnj||'Processo';sel.appendChild(opt);}
           }
           sel.value=id;
+          sel.dispatchEvent(new Event('change',{bubbles:true}));
           const p=(D.processos||[]).find(x=>String(x.id)===String(id));
           const cliente=p?clienteDoProcesso(p):'';
           campo.value='';
           resultados.innerHTML=`<div class="small" style="color:#067647;font-weight:700">Vinculado: ${esc(p?.numero_cnj||'')} — ${esc(cliente||p?.titulo||'')}</div>`;
+          atualizarBotaoTribunal();
           setTimeout(()=>{painel.style.display='none';},450);
         };
       });
@@ -92,9 +129,14 @@
       painel.style.display=abrir?'block':'none';
       if(abrir){renderResultados();setTimeout(()=>campo.focus(),0);}
     };
+    sel.addEventListener('change',atualizarBotaoTribunal);
     campo.oninput=renderResultados;
     campo.onkeydown=e=>{if(e.key==='Escape'){painel.style.display='none';campo.value='';}};
     limpar.onclick=()=>{campo.value='';renderResultados();campo.focus();};
+
+    const observer=new MutationObserver(()=>atualizarBotaoTribunal());
+    observer.observe(modal,{attributes:true,attributeFilter:['class']});
+    setTimeout(atualizarBotaoTribunal,0);
   }
 
   esperar();
