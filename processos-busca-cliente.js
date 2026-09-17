@@ -1,5 +1,27 @@
 (()=>{
   const normalizar=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+
+  function inserirBotoesEditarCompactos(){
+    const processos=Array.isArray(window.D?.processos)?window.D.processos:[];
+    document.querySelectorAll('#tbProcessos tr').forEach(tr=>{
+      const td=tr.querySelector('td');
+      if(!td||td.querySelector('.btnEditarMiniProc'))return;
+      const texto=String(td.innerText||'');
+      const numero=(texto.match(/\d{7}-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4}/)||[])[0];
+      if(!numero)return;
+      const p=processos.find(x=>String(x.numero_cnj||'').trim()===numero.trim());
+      if(!p)return;
+      const b=document.createElement('button');
+      b.type='button';
+      b.className='secondary btnEditarMiniProc';
+      b.textContent='Editar';
+      b.title='Editar processo';
+      b.style.cssText='padding:2px 6px;margin-left:6px;font-size:9px;line-height:1.2;border-radius:6px;vertical-align:middle;min-height:auto';
+      b.onclick=e=>{e.stopPropagation();if(typeof window.editarProcessoSIG==='function')window.editarProcessoSIG(p.id);};
+      td.appendChild(b);
+    });
+  }
+
   const esperar=()=>{
     if(typeof window.renderProcessosAprimorados!=='function'||!document.getElementById('buscaProcesso')){
       setTimeout(esperar,180);return;
@@ -10,6 +32,8 @@
     const original=window.renderProcessosAprimorados;
     window.renderProcessosAprimorados=function(){
       original.apply(this,arguments);
+      inserirBotoesEditarCompactos();
+
       const campo=document.getElementById('buscaProcesso');
       const termo=String(campo?.value||'').trim();
       if(!termo)return;
@@ -39,6 +63,8 @@
 
     const btn=document.getElementById('btnBuscarProcesso');
     if(btn)btn.title='Buscar por número do processo ou nome do cliente';
+
+    inserirBotoesEditarCompactos();
   };
   esperar();
 })();
