@@ -6,14 +6,19 @@
     function fmtData(v){if(!v)return '—';const d=new Date(v+'T12:00:00');return d.toLocaleDateString('pt-BR')}
     function processoTitulo(id,cnj){const p=(D.processos||[]).find(x=>x.id===id);return p?.titulo||cnj||'Não vinculado'}
 
+    window.__filtroRecorteSIG=window.__filtroRecorteSIG||'todos';
+
     const css=`
       #recorte{min-width:0;overflow-x:hidden}
       #recorte .rd-hero{display:flex;justify-content:space-between;align-items:center;gap:16px;background:linear-gradient(135deg,#102c55,#173b72);color:#fff;border-radius:20px;padding:18px 20px;margin:4px 0 14px;box-shadow:0 10px 28px rgba(16,44,85,.14)}
       #recorte .rd-hero h3{margin:0 0 4px;font-family:Georgia,serif;font-size:24px}
       #recorte .rd-hero p{margin:0;color:#d8e4f3;font-size:12px;line-height:1.45;max-width:760px}
       #recorte .rd-hero button{background:#fff;color:#173b72;border:0;border-radius:10px;padding:9px 12px;font-weight:700;white-space:nowrap}
-      #recorte .rd-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
-      #recorte .rd-stat{background:#fff;border:1px solid #e1e8f0;border-radius:15px;padding:12px 14px;box-shadow:0 4px 14px rgba(16,44,85,.04)}
+      #recorte .rd-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+      #recorte .rd-stat{background:#fff;border:1px solid #e1e8f0;border-radius:15px;padding:12px 14px;box-shadow:0 4px 14px rgba(16,44,85,.04);cursor:pointer;transition:.16s ease;user-select:none}
+      #recorte .rd-stat:hover{transform:translateY(-1px);border-color:#b8c7d8;box-shadow:0 8px 18px rgba(16,44,85,.08)}
+      #recorte .rd-stat:focus{outline:3px solid rgba(23,59,114,.18);outline-offset:2px}
+      #recorte .rd-stat.ativo{border-color:#173b72;box-shadow:0 0 0 2px rgba(23,59,114,.12),0 8px 20px rgba(16,44,85,.09);background:#f7faff}
       #recorte .rd-stat .small{font-size:10px;color:#718398;text-transform:uppercase;letter-spacing:.35px}
       #recorte .rd-stat b{display:block;font-size:26px;color:#102c55;margin-top:3px}
       #recorte .rd-list{display:grid;gap:10px;min-width:0}
@@ -35,7 +40,9 @@
       #recorte .rd-actions button{padding:6px 8px;border-radius:8px;font-size:10px}
       #recorte .rd-status{margin-left:auto}
       #recorte .rd-empty{background:#fff;border:1px dashed #ccd7e4;border-radius:14px;padding:24px;text-align:center;color:#8492a4}
-      @media(max-width:850px){#recorte .rd-hero{align-items:flex-start;flex-direction:column}#recorte .rd-stats{grid-template-columns:1fr 1fr}#recorte .rd-meta{grid-template-columns:1fr}}
+      #recorte .rd-filtro-info{font-size:11px;color:#607389;margin:-4px 0 10px 2px;display:none}
+      @media(max-width:1000px){#recorte .rd-stats{grid-template-columns:1fr 1fr}}
+      @media(max-width:850px){#recorte .rd-hero{align-items:flex-start;flex-direction:column}#recorte .rd-meta{grid-template-columns:1fr}}
       @media(max-width:520px){#recorte .rd-stats{grid-template-columns:1fr}#recorte .rd-card-top{flex-direction:column}#recorte .rd-status{margin-left:0}.main{min-width:0}}
     `;
 
@@ -71,16 +78,60 @@
             <button type="button" id="btnAtualizarRecortes">Atualizar lista</button>
           </div>
           <div class="rd-stats">
-            <div class="rd-stat"><div class="small">Não analisadas</div><b id="rdNovas">0</b></div>
-            <div class="rd-stat"><div class="small">Total de publicações</div><b id="rdTotal">0</b></div>
-            <div class="rd-stat"><div class="small">Sem processo vinculado</div><b id="rdSemVinculo">0</b></div>
+            <div class="rd-stat" data-filtro="nao" role="button" tabindex="0" title="Mostrar somente publicações não analisadas"><div class="small">Não analisadas</div><b id="rdNovas">0</b></div>
+            <div class="rd-stat" data-filtro="analisadas" role="button" tabindex="0" title="Mostrar somente publicações analisadas"><div class="small">Analisadas</div><b id="rdAnalisadas">0</b></div>
+            <div class="rd-stat ativo" data-filtro="todos" role="button" tabindex="0" title="Mostrar todas as publicações"><div class="small">Total de publicações</div><b id="rdTotal">0</b></div>
+            <div class="rd-stat" data-filtro="sem" role="button" tabindex="0" title="Mostrar publicações sem processo vinculado"><div class="small">Sem processo vinculado</div><b id="rdSemVinculo">0</b></div>
           </div>
+          <div id="rdFiltroInfo" class="rd-filtro-info"></div>
           <div id="rdLista" class="rd-list"></div>
         `;
         main.appendChild(sec);
         document.getElementById('btnAtualizarRecortes').onclick=carregarRecortes;
+        sec.querySelectorAll('.rd-stat').forEach(card=>{
+          const acionar=()=>selecionarFiltroRecorte(card.dataset.filtro||'todos');
+          card.onclick=acionar;
+          card.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();acionar();}};
+        });
       }
     }
+
+    function passaFiltro(r,filtro){
+      if(filtro==='nao')return !r.analisada;
+      if(filtro==='analisadas')return !!r.analisada;
+      if(filtro==='sem')return !r.processo_id;
+      return true;
+    }
+
+    function nomeFiltro(filtro){
+      if(filtro==='nao')return 'Não analisadas';
+      if(filtro==='analisadas')return 'Analisadas';
+      if(filtro==='sem')return 'Sem processo vinculado';
+      return 'Todas as publicações';
+    }
+
+    window.aplicarFiltroRecorteSIG=function(){
+      const filtro=window.__filtroRecorteSIG||'todos';
+      document.querySelectorAll('#recorte .rd-stat').forEach(c=>c.classList.toggle('ativo',c.dataset.filtro===filtro));
+      const info=document.getElementById('rdFiltroInfo');
+      if(info){
+        info.textContent=filtro==='todos'?'':`Filtro ativo: ${nomeFiltro(filtro)}. Clique em “Total de publicações” para limpar.`;
+        info.style.display=filtro==='todos'?'none':'block';
+      }
+      const mapa=new Map((window.__recortesSIG||[]).map(r=>[String(r.id),r]));
+      document.querySelectorAll('#rdLista .rd-card').forEach(card=>{
+        const r=mapa.get(String(card.dataset.recorteId||''));
+        if(!r)return;
+        card.dataset.passaFiltro=passaFiltro(r,filtro)?'1':'0';
+      });
+      if(typeof window.aplicarArquivamentoRecorteSIG==='function')window.aplicarArquivamentoRecorteSIG();
+      else document.querySelectorAll('#rdLista .rd-card').forEach(card=>{card.style.display=card.dataset.passaFiltro==='0'?'none':'';});
+    };
+
+    window.selecionarFiltroRecorte=function(filtro){
+      window.__filtroRecorteSIG=filtro||'todos';
+      window.aplicarFiltroRecorteSIG();
+    };
 
     window.verRecorteDigital=function(id){
       const r=(window.__recortesSIG||[]).find(x=>x.id===id);if(!r)return;
@@ -106,8 +157,9 @@
       const {data,error}=await sb.from('publicacoes_recorte').select('*').order('data_publicacao',{ascending:false}).order('criado_em',{ascending:false});
       if(error){lista.innerHTML=`<div class="rd-empty">Erro ao carregar: ${escRD(error.message)}</div>`;return;}
       const rec=data||[];window.__recortesSIG=rec;
-      const nao=rec.filter(x=>!x.analisada).length, sem=rec.filter(x=>!x.processo_id).length;
+      const nao=rec.filter(x=>!x.analisada).length, analisadas=rec.filter(x=>!!x.analisada).length, sem=rec.filter(x=>!x.processo_id).length;
       document.getElementById('rdNovas').textContent=nao;
+      document.getElementById('rdAnalisadas').textContent=analisadas;
       document.getElementById('rdTotal').textContent=rec.length;
       document.getElementById('rdSemVinculo').textContent=sem;
       lista.innerHTML=rec.map(r=>{
@@ -115,7 +167,7 @@
         const btnAnalisar=r.analisada?'':`<button type="button" class="secondary" onclick="marcarRecorteAnalisado('${r.id}')">Marcar analisada</button>`;
         const btnProc=r.processo_id?`<button type="button" class="secondary" onclick="abrirProcessoDoRecorte('${r.processo_id}')">Tribunal ↗</button>`:'';
         const resumo=String(r.texto||'').length>320?String(r.texto||'').slice(0,320)+'…':String(r.texto||'');
-        return `<article class="rd-card ${r.analisada?'analisada':'nova'}">
+        return `<article class="rd-card ${r.analisada?'analisada':'nova'}" data-recorte-id="${escRD(r.id)}">
           <div class="rd-card-top">
             <div class="rd-date"><b>${fmtData(r.data_publicacao)}</b><span>Disponib.: ${fmtData(r.data_disponibilizacao)}</span></div>
             <div class="rd-title"><strong>${escRD(processoTitulo(r.processo_id,r.numero_cnj))}</strong><div class="rd-cnj">${escRD(r.numero_cnj||'Sem número CNJ identificado')}</div></div>
@@ -129,6 +181,7 @@
           <div class="rd-actions"><button type="button" class="secondary" onclick="verRecorteDigital('${r.id}')">Ver texto completo</button>${btnAnalisar}${btnProc}</div>
         </article>`;
       }).join('')||'<div class="rd-empty">Nenhuma publicação importada.</div>';
+      window.aplicarFiltroRecorteSIG();
     }
 
     garantirTela();
