@@ -1,19 +1,21 @@
-// SIG Advocacia Colombo — Importador automático do Recorte Digital OAB/SP
-// Implantar este arquivo em um projeto Google Apps Script executado pela conta
-// que recebe os e-mails do Recorte Digital.
+// SIG Advocacia Colombo — Importador do Recorte Digital OAB/SP
+// Google Apps Script executado pela conta Gmail que recebe o Recorte Digital.
 //
-// Propriedades do script necessárias:
-// SUPABASE_URL=https://dmvytzyfzeytfrddyucv.supabase.co
-// SUPABASE_SERVICE_ROLE=<chave service_role do projeto>
-// SIG_USER_ID=2264550a-f366-4295-81e7-b05b00f3b621
-// SIG_TOKEN=<token aleatório forte para proteger o Web App>
+// Configuração necessária em Propriedades do script:
+// SIG_EDGE_TOKEN = token privado informado na implantação
+//
+// Implantar como Aplicativo da Web:
+// - Executar como: Eu
+// - Quem tem acesso: Qualquer pessoa
 
-function doGet(e) {
-  return responder_(sincronizarRecortes_(e));
+const SIG_EDGE_URL = 'https://dmvytzyfzeytfrddyucv.supabase.co/functions/v1/importar-recorte';
+
+function doGet() {
+  return responder_(sincronizarRecortes_());
 }
 
-function doPost(e) {
-  return responder_(sincronizarRecortes_(e));
+function doPost() {
+  return responder_(sincronizarRecortes_());
 }
 
 function responder_(obj) {
@@ -22,21 +24,10 @@ function responder_(obj) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-function sincronizarRecortes_(e) {
+function sincronizarRecortes_() {
   try {
-    const props = PropertiesService.getScriptProperties();
-    const tokenEsperado = props.getProperty('SIG_TOKEN') || '';
-    const tokenRecebido = (e && e.parameter && e.parameter.token) || '';
-    if (!tokenEsperado || tokenRecebido !== tokenEsperado) {
-      return { ok: false, erro: 'Token inválido.' };
-    }
-
-    const supabaseUrl = props.getProperty('SUPABASE_URL');
-    const serviceRole = props.getProperty('SUPABASE_SERVICE_ROLE');
-    const userId = props.getProperty('SIG_USER_ID');
-    if (!supabaseUrl || !serviceRole || !userId) {
-      return { ok: false, erro: 'Configuração incompleta no Apps Script.' };
-    }
+    const token = PropertiesService.getScriptProperties().getProperty('SIG_EDGE_TOKEN');
+    if (!token) return { ok:false, erro:'SIG_EDGE_TOKEN não configurado.' };
 
     const threads = GmailApp.search('from:oabsp@recortedigital.adv.br newer_than:15d', 0, 30);
     const mensagens = [];
@@ -45,60 +36,67 @@ function sincronizarRecortes_(e) {
 
     let importadas = 0;
     let ignoradas = 0;
-    let erros = [];
+    const erros = [];
+    let emailsLidos = 0;
 
     mensagens.forEach(msg => {
-      const gmailId = msg.getId();
-      const assunto = msg.getSubject() || '';
-      const corpo = msg.getPlainBody() || '';
-      const pubs = extrairPublicacoes_(corpo);
-      pubs.forEach((p, idx) => {
-        try {
-          const identificador = p.identificador_documento || (gmailId + ':' + (idx + 1));
-          if (jaExiste_(supabaseUrl, serviceRole, gmailId, identificador, p.numero_cnj, p.data_publicacao)) {
-            ignoradas++;
-            return;
-          }
+      try {
+        const corpo = msg.getPlainBody() || '';
+        const pubs = extrairPublicacoes_(corpo);
+        if (!pubs.length) return;
 
-          const processoId = localizarProcesso_(supabaseUrl, serviceRole, userId, p.numero_cnj);
-          const registro = {
-            user_id: userId,
-            processo_id: processoId,
-            numero_cnj: p.numero_cnj,
-            fonte: 'Recorte Digital OAB/SP',
-            assunto_email: assunto,
-            gmail_message_id: gmailId,
-            data_disponibilizacao: p.data_disponibilizacao,
-            data_publicacao: p.data_publicacao,
-            tipo_publicacao: p.tipo_publicacao,
-            jornal: p.jornal,
-            caderno: p.caderno,
-            local_publicacao: p.local_publicacao,
-            vara: p.vara,
-            identificador_documento: identificador,
-            texto: p.texto,
-            lida: false,
-            analisada: false,
-            prazo_gerado: false,
-            arquivada: false
-          };
-          inserir_(supabaseUrl, serviceRole, registro);
-          importadas++;
-        } catch (err) {
-          erros.push(String(err && err.message ? err.message : err));
-        }
-      });
+        emailsLidos++;
+        const resposta = enviarAoSIG_({
+          assunto_email: msg.getSubject() || '',
+          gmail_message_id: msg.getId(),
+          publicacoes: pubs
+        }, token);
+
+        importadas += Number(resposta.importadas || 0);
+        ignoradas += Number(resposta.ignoradas || 0);
+        if (Array.isArray(resposta.erros)) erros.push(...resposta.erros);
+        if (resposta.erro) erros.push(resposta.erro);
+      } catch (err) {
+        erros.push(String(err && err.message ? err.message : err));
+      }
     });
 
-    return { ok: erros.length === 0, importadas, ignoradas, erros };
+    return {
+      ok: erros.length === 0,
+      emails_lidos: emailsLidos,
+      importadas,
+      ignoradas,
+      erros
+    };
   } catch (err) {
-    return { ok: false, erro: String(err && err.message ? err.message : err) };
+    return { ok:false, erro:String(err && err.message ? err.message : err) };
   }
+}
+
+function enviarAoSIG_(payload, token) {
+  const r = UrlFetchApp.fetch(SIG_EDGE_URL, {
+    method: 'post',
+    contentType: 'application/json',
+    headers: { 'x-sig-token': token },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
+
+  const status = r.getResponseCode();
+  const texto = r.getContentText() || '{}';
+  let json;
+  try { json = JSON.parse(texto); }
+  catch (_) { json = { ok:false, erro:'Resposta inválida do SIG: ' + texto }; }
+
+  if (status >= 300) throw new Error(json.erro || ('Erro HTTP ' + status));
+  return json;
 }
 
 function extrairPublicacoes_(texto) {
   if (!texto) return [];
+
   const blocos = texto.split(/\n\s*Publica(?:ç|c)ão:\s*\d+\.?\s*\n/i).slice(1);
+
   return blocos.map(bloco => {
     const dataDisp = capturar_(bloco, /Data de Disponibiliza(?:ç|c)ão:\s*(\d{2}\/\d{2}\/\d{4})/i);
     const dataPub  = capturar_(bloco, /Data de Publica(?:ç|c)ão:\s*(\d{2}\/\d{2}\/\d{4})/i);
@@ -107,11 +105,17 @@ function extrairPublicacoes_(texto) {
     const local    = capturar_(bloco, /Local:\s*([^\n]+)/i);
     const vara     = capturar_(bloco, /Vara:\s*([^\n]+)/i);
     const tipo     = capturar_(bloco, /Publica(?:ç|c)ão:\s*\n?\s*([^\n]+)/i) || 'Publicação';
-    const cnj      = capturar_(bloco, /PROCESSO:\s*(\d{7}-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4})/i) || capturar_(bloco, /(\d{7}-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4})/);
+    const cnj      = capturar_(bloco, /PROCESSO:\s*(\d{7}-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4})/i)
+                  || capturar_(bloco, /(\d{7}-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4})/);
     const ident    = capturar_(bloco, /Identificador do documento:\s*([^\.\n]+)/i);
-    const pubIdx   = bloco.search(/\nPublica(?:ç|c)ão:\s*\n/i);
-    let conteudo = pubIdx >= 0 ? bloco.slice(pubIdx).replace(/^\n?Publica(?:ç|c)ão:\s*\n/i, '') : bloco;
+
+    const pubIdx = bloco.search(/\nPublica(?:ç|c)ão:\s*\n/i);
+    let conteudo = pubIdx >= 0
+      ? bloco.slice(pubIdx).replace(/^\n?Publica(?:ç|c)ão:\s*\n/i, '')
+      : bloco;
+
     conteudo = conteudo.split(/\n\s*Total de Publica(?:ç|c)ões:/i)[0].trim();
+
     return {
       numero_cnj: cnj || null,
       data_disponibilizacao: paraISO_(dataDisp),
@@ -138,48 +142,7 @@ function paraISO_(br) {
   return m ? `${m[3]}-${m[2]}-${m[1]}` : null;
 }
 
-function headers_(serviceRole) {
-  return {
-    apikey: serviceRole,
-    Authorization: 'Bearer ' + serviceRole,
-    'Content-Type': 'application/json',
-    Prefer: 'return=minimal'
-  };
-}
-
-function jaExiste_(base, key, gmailId, identificador, cnj, dataPub) {
-  const filtros = [];
-  if (gmailId) filtros.push('gmail_message_id.eq.' + encodeURIComponent(gmailId));
-  if (identificador) filtros.push('identificador_documento.eq.' + encodeURIComponent(identificador));
-  if (cnj && dataPub) filtros.push('and(numero_cnj.eq.' + encodeURIComponent(cnj) + ',data_publicacao.eq.' + encodeURIComponent(dataPub) + ')');
-  const url = base + '/rest/v1/publicacoes_recorte?select=id&or=(' + filtros.join(',') + ')&limit=1';
-  const r = UrlFetchApp.fetch(url, { method:'get', headers:headers_(key), muteHttpExceptions:true });
-  if (r.getResponseCode() >= 300) throw new Error('Falha ao verificar duplicidade: ' + r.getContentText());
-  const arr = JSON.parse(r.getContentText() || '[]');
-  return arr.length > 0;
-}
-
-function localizarProcesso_(base, key, userId, cnj) {
-  if (!cnj) return null;
-  const url = base + '/rest/v1/processos?select=id&user_id=eq.' + encodeURIComponent(userId) + '&numero_cnj=eq.' + encodeURIComponent(cnj) + '&limit=1';
-  const r = UrlFetchApp.fetch(url, { method:'get', headers:headers_(key), muteHttpExceptions:true });
-  if (r.getResponseCode() >= 300) throw new Error('Falha ao localizar processo: ' + r.getContentText());
-  const arr = JSON.parse(r.getContentText() || '[]');
-  return arr.length ? arr[0].id : null;
-}
-
-function inserir_(base, key, registro) {
-  const r = UrlFetchApp.fetch(base + '/rest/v1/publicacoes_recorte', {
-    method:'post',
-    headers:headers_(key),
-    payload:JSON.stringify(registro),
-    muteHttpExceptions:true
-  });
-  if (r.getResponseCode() >= 300) throw new Error('Falha ao inserir publicação: ' + r.getContentText());
-}
-
-// Execute uma vez manualmente depois de configurar as propriedades para validar.
+// Execute manualmente uma vez para autorizar GmailApp/UrlFetchApp e validar.
 function testeSincronizacao() {
-  const token = PropertiesService.getScriptProperties().getProperty('SIG_TOKEN');
-  Logger.log(JSON.stringify(sincronizarRecortes_({ parameter:{ token:token } })));
+  Logger.log(JSON.stringify(sincronizarRecortes_()));
 }
