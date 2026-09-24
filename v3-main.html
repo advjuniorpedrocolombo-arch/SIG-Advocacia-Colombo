@@ -17,7 +17,7 @@
     html=html.replace('painel-layout-premium.js?v=20260913-2110','painel-layout-premium.js?v=20260913-2200');
     html=html.replace('painel-layout-premium.js?v=20260913-2125','painel-layout-premium.js?v=20260913-2200');
     html=html.replace('painel-layout-premium.js?v=20260913-2150','painel-layout-premium.js?v=20260913-2200');
-    html=html.replace('</body>','<script src="painel-atendimentos-card.js?v=20260913-2200"><\/script><script src="recorte-auto-refresh.js?v=20260922-1245"><\/script><script src="atendimentos-chatgpt-projeto.js?v=20260923-0918"><\/script><script src="financeiro.js?v=20260924-1115"><\/script></body>');
+    html=html.replace('</body>','<script src="painel-atendimentos-card.js?v=20260913-2200"><\/script><script src="recorte-auto-refresh.js?v=20260922-1245"><\/script><script src="atendimentos-chatgpt-projeto.js?v=20260923-0918"><\/script><script src="financeiro.js?v=20260924-1115"><\/script><script src="financeiro-preserva-cliente.js?v=20260924-1451"><\/script></body>');
     document.open();document.write(html);document.close();
   }catch(e){document.getElementById('loader').textContent='Falha ao carregar o SIG: '+(e?.message||e);}
 })();
