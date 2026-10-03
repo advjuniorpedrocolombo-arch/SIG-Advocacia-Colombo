@@ -81,6 +81,33 @@
       const atualizar=document.getElementById('atAtualizar');if(atualizar&&!atualizar.dataset.on){atualizar.dataset.on='1';atualizar.onclick=carregar;}
       ['atBusca','atFiltroStatus','atFiltroArea'].forEach(id=>{const el=document.getElementById(id);if(el&&!el.dataset.on){el.dataset.on='1';el.addEventListener(id==='atBusca'?'input':'change',renderLista);}});
       const form=document.getElementById('atForm');if(form&&!form.dataset.on){form.dataset.on='1';form.onsubmit=salvar;}
+      const listaBox=document.getElementById('atLista');
+      if(listaBox&&!listaBox.dataset.editOn){
+        listaBox.dataset.editOn='1';
+        listaBox.addEventListener('click',async e=>{
+          const btnEdit=e.target.closest('[data-editar]');
+          if(!btnEdit)return;
+          e.preventDefault();
+          e.stopPropagation();
+          const id=btnEdit.dataset.editar;
+          if(!id)return;
+          let item=lista.find(x=>String(x.id)===String(id));
+          if(!item){
+            try{
+              btnEdit.disabled=true;
+              const {data,error}=await sb.from('atendimentos').select('*').eq('id',id).single();
+              if(error)throw error;
+              item=data;
+            }catch(err){
+              alert('Não foi possível abrir este atendimento para edição: '+(err?.message||err));
+              return;
+            }finally{
+              btnEdit.disabled=false;
+            }
+          }
+          abrirModal(item);
+        });
+      }
     }
 
     function abrirModal(item=null){
@@ -113,7 +140,6 @@
       const box=document.getElementById('atLista');if(!box)return;const busca=(document.getElementById('atBusca')?.value||'').toLowerCase();const st=document.getElementById('atFiltroStatus')?.value||'';const ar=document.getElementById('atFiltroArea')?.value||'';
       const itens=lista.filter(x=>(!st||x.status===st)&&(!ar||x.area_juridica===ar)&&(!busca||[x.nome_contato,x.telefone,x.email,x.resumo_problema].some(v=>String(v||'').toLowerCase().includes(busca))));
       box.innerHTML=itens.map(x=>`<article class="at-card"><div class="at-card-top"><div><div class="at-name">${esc(x.nome_contato)}</div><div class="at-meta">${esc(x.telefone||'Sem telefone')}${x.email?' · '+esc(x.email):''}<br>Primeiro contato: ${fmt(x.data_primeiro_contato)}</div></div>${x.area_juridica?`<span class="at-area">${esc(x.area_juridica)}</span>`:''}</div><div class="at-badges"><span class="at-badge ${esc(x.status)}">${esc(statusLabel(x.status))}</span><span class="at-badge ${esc(x.urgencia)}">${esc(urgLabel(x.urgencia))}</span></div><div class="at-resumo">${esc(x.resumo_problema)}</div><div class="at-follow"><strong>Próximo contato:</strong> ${fmt(x.proximo_contato)}</div><div class="at-actions"><button type="button" class="secondary" data-editar="${x.id}">Editar</button>${x.telefone?`<button type="button" class="secondary" data-whats="${esc(x.telefone)}">WhatsApp ↗</button>`:''}<button type="button" class="secondary" data-status="${x.id}" data-novo-status="em_analise">Em análise</button><button type="button" class="secondary" data-status="${x.id}" data-novo-status="contratado">Contratado</button></div></article>`).join('')||'<div class="at-empty">Nenhum atendimento encontrado.</div>';
-      box.querySelectorAll('[data-editar]').forEach(b=>b.onclick=()=>abrirModal(lista.find(x=>x.id===b.dataset.editar)));
       box.querySelectorAll('[data-whats]').forEach(b=>b.onclick=()=>{const n=String(b.dataset.whats).replace(/\D/g,'');window.open(`https://wa.me/55${n}`,'_blank','noopener');});
       box.querySelectorAll('[data-status]').forEach(b=>b.onclick=async()=>{const {error}=await sb.from('atendimentos').update({status:b.dataset.novoStatus,atualizado_em:new Date().toISOString()}).eq('id',b.dataset.status);if(error)return alert(error.message);await carregar();});
     }
